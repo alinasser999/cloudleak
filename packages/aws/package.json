@@ -13,6 +13,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-sts": "^3.650.0",
+    "@aws-sdk/client-ec2": "^3.650.0",
+    "@aws-sdk/client-rds": "^3.650.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.650.0",
+    "@aws-sdk/client-elastic-load-balancing": "^3.650.0",
     "@cloudleak/core": "workspace:*"
   },
   "devDependencies": {

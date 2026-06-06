@@ -23,6 +23,9 @@ importers:
       '@cloudleak/aws':
         specifier: workspace:*
         version: link:../../packages/aws
+      '@cloudleak/collectors':
+        specifier: workspace:*
+        version: link:../../packages/collectors
       '@cloudleak/core':
         specifier: workspace:*
         version: link:../../packages/core

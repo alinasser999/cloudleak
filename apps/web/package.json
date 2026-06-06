@@ -20,7 +20,8 @@
     "zod": "^3.23.0",
     "@cloudleak/core": "workspace:*",
     "@cloudleak/db": "workspace:*",
-    "@cloudleak/aws": "workspace:*"
+    "@cloudleak/aws": "workspace:*",
+    "@cloudleak/collectors": "workspace:*"
   },
   "devDependencies": {
     "@cloudleak/config": "workspace:*",

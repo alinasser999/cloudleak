@@ -2,10 +2,12 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { href: "/settings/aws", label: "Settings", active: true },
+  { href: "/scans", label: "Scans" },
+  { href: "/resources", label: "Resources" },
+  { href: "/settings/aws", label: "Settings" },
 ];
 
-const COMING_SOON = ["Overview", "Findings", "Resources", "Reports"];
+const COMING_SOON = ["Overview", "Findings", "Reports"];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,15 +15,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside className="w-56 shrink-0 border-r border-ink/10 px-4 py-6">
         <div className="px-2 text-lg font-semibold text-brand">CloudLeak</div>
         <nav className="mt-6 space-y-1 text-sm">
-          {COMING_SOON.map((label) => (
-            <span
-              key={label}
-              className="block cursor-not-allowed rounded px-2 py-1.5 text-ink/35"
-              title="Coming soon"
-            >
-              {label}
-            </span>
-          ))}
           {NAV.map((item) => (
             <Link
               key={item.href}
@@ -30,6 +23,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             >
               {item.label}
             </Link>
+          ))}
+          {COMING_SOON.map((label) => (
+            <span
+              key={label}
+              className="block cursor-not-allowed rounded px-2 py-1.5 text-ink/35"
+              title="Coming soon"
+            >
+              {label}
+            </span>
           ))}
         </nav>
       </aside>

@@ -2,10 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createServiceClient, OrganizationRepository, MembershipRepository } from "@cloudleak/db";
 import { InviteService } from "@/server/services/invite-service";
 
-const hasEnv = !!(process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.TEST_USER_ID);
+const hasEnv = !!(
+  process.env.SUPABASE_SERVICE_ROLE_KEY &&
+  process.env.TEST_USER_ID &&
+  process.env.TEST_USER_JWT
+);
 
 describe.skipIf(!hasEnv)("InviteService (integration)", () => {
   const ownerId = process.env.TEST_USER_ID!;
+  const token = process.env.TEST_USER_JWT!;
   let orgId: string;
 
   beforeAll(async () => {
@@ -20,15 +25,14 @@ describe.skipIf(!hasEnv)("InviteService (integration)", () => {
   });
 
   it("owner can create an invite", async () => {
-    const invite = await InviteService.create(ownerId, orgId, "teammate@example.com", "member");
+    const invite = await InviteService.create(token, ownerId, orgId, "teammate@example.com", "member");
     expect(invite.token.length).toBeGreaterThan(10);
     expect(invite.status).toBe("pending");
   });
 
   it("rejects accept when the email does not match the invite", async () => {
-    const invite = await InviteService.create(ownerId, orgId, "alice@example.com", "member");
-    await expect(
-      InviteService.accept(ownerId, "bob@example.com", invite.token),
-    ).rejects.toThrow();
+    // The owner's email won't match this invite, so accept must fail.
+    const invite = await InviteService.create(token, ownerId, orgId, "alice@example.com", "member");
+    await expect(InviteService.accept(token, invite.token)).rejects.toThrow();
   });
 });

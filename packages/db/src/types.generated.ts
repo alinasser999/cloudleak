@@ -446,7 +446,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_invite: { Args: { p_token: string }; Returns: string }
+      create_organization: {
+        Args: { p_name: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          plan: string
+        }
+      }
     }
     Enums: {
       [_ in never]: never

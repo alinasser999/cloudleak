@@ -14,12 +14,12 @@ const Body = z.object({
 
 export async function POST(req: Request) {
   try {
-    const { user } = await requireUser();
+    const { user, accessToken } = await requireUser();
     const parsed = Body.safeParse(await req.json());
     if (!parsed.success)
       throw new ValidationError("organizationId, id, accountId, roleArn required");
     const { organizationId, id, accountId, roleArn } = parsed.data;
-    const account = await new AwsConnectService().validate(
+    const account = await new AwsConnectService(accessToken).validate(
       user.id,
       organizationId,
       id,

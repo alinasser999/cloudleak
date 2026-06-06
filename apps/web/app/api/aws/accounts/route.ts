@@ -6,10 +6,10 @@ import { ValidationError } from "@cloudleak/core";
 
 export async function GET(req: Request) {
   try {
-    const { user } = await requireUser();
+    const { user, accessToken } = await requireUser();
     const orgId = new URL(req.url).searchParams.get("organizationId");
     if (!orgId) throw new ValidationError("organizationId query param required");
-    const accounts = await new AwsConnectService().list(user.id, orgId);
+    const accounts = await new AwsConnectService(accessToken).list(user.id, orgId);
     return NextResponse.json({ accounts });
   } catch (e) {
     return handleApiError(e);

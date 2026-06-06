@@ -9,10 +9,10 @@ const Body = z.object({ token: z.string().min(10) });
 
 export async function POST(req: Request) {
   try {
-    const { user } = await requireUser();
+    const { accessToken } = await requireUser();
     const parsed = Body.safeParse(await req.json());
     if (!parsed.success) throw new ValidationError("token required");
-    const result = await InviteService.accept(user.id, user.email ?? "", parsed.data.token);
+    const result = await InviteService.accept(accessToken, parsed.data.token);
     return NextResponse.json(result);
   } catch (e) {
     return handleApiError(e);

@@ -1,23 +1,18 @@
 import { randomBytes } from "node:crypto";
-import { createServiceClient, MembershipRepository, InvitationRepository } from "@cloudleak/db";
-import {
-  ForbiddenError,
-  NotFoundError,
-  ValidationError,
-  type Invitation,
-  type Role,
-} from "@cloudleak/core";
+import { createUserClient, MembershipRepository, InvitationRepository } from "@cloudleak/db";
+import { ForbiddenError, ValidationError, type Invitation, type Role } from "@cloudleak/core";
 
 const INVITE_TTL_DAYS = 7;
 
 export class InviteService {
   static async create(
+    accessToken: string,
     actorUserId: string,
     organizationId: string,
     email: string,
     role: Role,
   ): Promise<Invitation> {
-    const db = createServiceClient();
+    const db = createUserClient(accessToken);
     const actor = await new MembershipRepository(db).findForUserInOrg(actorUserId, organizationId);
     if (!actor || (actor.role !== "owner" && actor.role !== "admin")) {
       throw new ForbiddenError("Only owners/admins can invite");
@@ -35,25 +30,11 @@ export class InviteService {
     });
   }
 
-  static async accept(
-    userId: string,
-    userEmail: string,
-    token: string,
-  ): Promise<{ organizationId: string }> {
-    const db = createServiceClient();
-    const invites = new InvitationRepository(db);
-    const invite = await invites.findByToken(token);
-    if (!invite) throw new NotFoundError("Invite not found");
-    if (invite.status !== "pending") throw new ValidationError("Invite is no longer valid");
-    if (new Date(invite.expiresAt).getTime() < Date.now())
-      throw new ValidationError("Invite has expired");
-    if (invite.email.toLowerCase() !== userEmail.toLowerCase())
-      throw new ForbiddenError("This invite is for a different email");
-
-    const memberships = new MembershipRepository(db);
-    const existing = await memberships.findForUserInOrg(userId, invite.organizationId);
-    if (!existing) await memberships.create(invite.organizationId, userId, invite.role);
-    await invites.markAccepted(invite.id);
-    return { organizationId: invite.organizationId };
+  /** Accepts via the accept_invite SECURITY DEFINER RPC (caller isn't a member yet). */
+  static async accept(accessToken: string, token: string): Promise<{ organizationId: string }> {
+    const db = createUserClient(accessToken);
+    const { data, error } = await db.rpc("accept_invite", { p_token: token });
+    if (error || !data) throw new ValidationError(error?.message ?? "Could not accept invite");
+    return { organizationId: data as string };
   }
 }

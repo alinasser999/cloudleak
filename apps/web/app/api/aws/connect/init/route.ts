@@ -9,10 +9,10 @@ const Body = z.object({ organizationId: z.string().uuid() });
 
 export async function POST(req: Request) {
   try {
-    const { user } = await requireUser();
+    const { user, accessToken } = await requireUser();
     const parsed = Body.safeParse(await req.json());
     if (!parsed.success) throw new ValidationError("organizationId required");
-    const result = await new AwsConnectService().init(user.id, parsed.data.organizationId);
+    const result = await new AwsConnectService(accessToken).init(user.id, parsed.data.organizationId);
     return NextResponse.json(result, { status: 201 });
   } catch (e) {
     return handleApiError(e);

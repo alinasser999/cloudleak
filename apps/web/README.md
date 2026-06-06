@@ -18,6 +18,21 @@ Copy values into `apps/web/.env.local` (gitignored). The Supabase project for th
 `SUPABASE_SERVICE_ROLE_KEY` is required by the server services and must never be exposed
 to the browser. The public URL + anon key are already filled in `.env.local`.
 
+## Quick local login (no OAuth setup)
+
+Google/GitHub require you to create OAuth apps and enable the providers in Supabase. For
+fast local testing there is also **email/password** login on `/login`. A ready-made demo
+account is seeded in the database:
+
+```
+email:    demo@cloudleak.dev
+password: CloudLeakDemo123!
+```
+
+Phase-1 write actions (create org, invites, AWS connect) run under the **signed-in user's
+JWT** with RLS — so the dashboard works locally **without** a service-role key. The
+service-role key remains only for the future background worker.
+
 ## OAuth providers
 
 Enable Google and GitHub in Supabase → Authentication → Providers, and set the redirect

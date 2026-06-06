@@ -19,7 +19,7 @@ const TYPES = [
 ] as const;
 
 const label = (t: string) => t.replace(/_/g, " ");
-const usd = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 export function ResourcesClient({ organizationId }: { organizationId: string }) {
   const [resources, setResources] = useState<Resource[]>([]);

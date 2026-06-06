@@ -21,7 +21,7 @@ interface Scan {
   createdAt: string;
 }
 
-const usd = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const totalCount = (s: ScanStats) =>
   Object.values(s.resourceCounts ?? {}).reduce((a, b) => a + b, 0);
 

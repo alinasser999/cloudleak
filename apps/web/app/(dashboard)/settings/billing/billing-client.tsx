@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeUp, staggerParent } from "../../../../components/motion";
+import { useToast } from "../../../../components/toast";
 
 interface Subscription {
   plan: string | null;
@@ -49,7 +50,7 @@ const PLANS = [
 export function BillingClient({ organizationId }: { organizationId: string }) {
   const [data, setData] = useState<OrgSub | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     void fetch(`/api/billing/subscription?organizationId=${organizationId}`)
@@ -63,11 +64,10 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
   async function upgrade(priceEnvKey: string) {
     const priceId = process.env[priceEnvKey];
     if (!priceId) {
-      setError(`${priceEnvKey} env var not set`);
+      toast.error(`${priceEnvKey} env var not set`);
       return;
     }
     setBusy(priceEnvKey);
-    setError(null);
     const res = await fetch("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,14 +78,13 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
       window.location.href = url;
     } else {
       const d = (await res.json()) as { error?: { message?: string } };
-      setError(d.error?.message ?? "Checkout failed");
+      toast.error(d.error?.message ?? "Checkout failed");
       setBusy(null);
     }
   }
 
   async function openPortal() {
     setBusy("portal");
-    setError(null);
     const res = await fetch("/api/billing/portal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -96,7 +95,7 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
       window.location.href = url;
     } else {
       const d = (await res.json()) as { error?: { message?: string } };
-      setError(d.error?.message ?? "Could not open billing portal");
+      toast.error(d.error?.message ?? "Could not open billing portal");
       setBusy(null);
     }
   }
@@ -138,8 +137,6 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
           </button>
         )}
       </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {/* Plan cards */}
       <motion.div

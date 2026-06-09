@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useToast } from "../../../components/toast";
 
 interface Account {
   id: string;
@@ -49,7 +50,7 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
   const [scans, setScans] = useState<Scan[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const refresh = useCallback(async () => {
     const [s, a] = await Promise.all([
@@ -76,16 +77,17 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
 
   async function runScan(awsAccountId: string) {
     setBusy(true);
-    setError(null);
     const res = await fetch("/api/scans", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ organizationId, awsAccountId }),
     });
-    if (res.ok) await refresh();
-    else {
+    if (res.ok) {
+      await refresh();
+      toast.success("Scan queued");
+    } else {
       const body = await res.json().catch(() => null);
-      setError(body?.error?.message ?? "Scan failed");
+      toast.error(body?.error?.message ?? "Scan failed");
     }
     setBusy(false);
   }
@@ -126,18 +128,6 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
           ))}
         </div>
       )}
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="text-sm text-red-600"
-          >
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
 
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-ink/40">History</h2>

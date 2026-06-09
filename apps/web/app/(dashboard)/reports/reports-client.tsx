@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { EASE_OUT } from "../../../components/motion";
+import { useToast } from "../../../components/toast";
 
 interface ScanStats {
   resourceCounts: Record<string, number>;
@@ -99,8 +100,7 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [allScans, setAllScans] = useState<Scan[]>([]);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     void Promise.all([
@@ -115,8 +115,6 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
 
   async function sendDigest() {
     setSending(true);
-    setSendError(null);
-    setSent(false);
     try {
       const res = await fetch("/api/reports/digest", {
         method: "POST",
@@ -125,13 +123,12 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
       });
       if (!res.ok) {
         const d = (await res.json()) as { error?: { message?: string } };
-        setSendError(d.error?.message ?? "Failed to send digest");
+        toast.error(d.error?.message ?? "Failed to send digest");
       } else {
-        setSent(true);
-        setTimeout(() => setSent(false), 4000);
+        toast.success("Digest sent to your email");
       }
     } catch {
-      setSendError("Network error");
+      toast.error("Network error");
     } finally {
       setSending(false);
     }
@@ -164,10 +161,8 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
             disabled={sending}
             className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60"
           >
-            {sending ? "Sending…" : sent ? "Sent!" : "Send weekly digest"}
+            {sending ? "Sending…" : "Send weekly digest"}
           </motion.button>
-          {sendError && <p className="text-xs text-red-500">{sendError}</p>}
-          {sent && <p className="text-xs text-emerald-600">Digest sent to your email.</p>}
         </div>
       </motion.div>
 

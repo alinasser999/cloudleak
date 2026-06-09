@@ -33,6 +33,16 @@ Phase-1 write actions (create org, invites, AWS connect) run under the **signed-
 JWT** with RLS — so the dashboard works locally **without** a service-role key. The
 service-role key remains only for the future background worker.
 
+## Run a scan locally (no AWS account)
+
+Set `CLOUDLEAK_FAKE_AWS=1` in `apps/web/.env.local`. With this flag the scan flow uses a
+seeded fake inventory client instead of calling AWS, so you can exercise the full
+Scans → Resources experience without a connected account. The scan still requires an AWS
+account row with `status = 'connected'`; without live STS you can seed one directly in
+Supabase. Then open `/scans`, click **Run scan**, and `/resources` populates with seeded
+resources and estimated monthly cost. `CLOUDLEAK_SCAN_REGIONS` (default `us-east-1`)
+controls which regions are scanned on the real path.
+
 ## OAuth providers
 
 Enable Google and GitHub in Supabase → Authentication → Providers, and set the redirect

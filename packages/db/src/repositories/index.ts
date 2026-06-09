@@ -5,3 +5,4 @@ export * from "./aws-account.js";
 export * from "./resource.js";
 export * from "./scan.js";
 export * from "./finding.js";
+export * from "./subscription.js";

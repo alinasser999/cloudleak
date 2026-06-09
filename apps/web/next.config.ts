@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  output: "standalone",
   transpilePackages: ["@cloudleak/core", "@cloudleak/db", "@cloudleak/aws"],
   webpack: (cfg) => {
     // Our TS sources use explicit ".js" extensions in relative imports (correct for

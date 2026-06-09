@@ -7,7 +7,11 @@ const NAV = [
   { href: "/resources", label: "Resources" },
   { href: "/findings", label: "Findings" },
   { href: "/reports", label: "Reports" },
-  { href: "/settings/aws", label: "Settings" },
+];
+
+const SETTINGS_NAV = [
+  { href: "/settings/aws", label: "AWS Accounts" },
+  { href: "/settings/billing", label: "Billing" },
 ];
 
 const COMING_SOON: string[] = [];
@@ -27,16 +31,23 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {item.label}
             </Link>
           ))}
-          {COMING_SOON.map((label) => (
-            <span
-              key={label}
-              className="block cursor-not-allowed rounded px-2 py-1.5 text-ink/35"
-              title="Coming soon"
-            >
-              {label}
-            </span>
-          ))}
         </nav>
+        <div className="mt-6">
+          <p className="px-2 text-[10px] font-semibold uppercase tracking-widest text-ink/30">
+            Settings
+          </p>
+          <nav className="mt-1 space-y-1 text-sm">
+            {SETTINGS_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block rounded px-2 py-1.5 font-medium text-ink hover:bg-ink/5"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </aside>
       <main className="flex-1 px-8 py-8">{children}</main>
     </div>

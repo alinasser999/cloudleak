@@ -12,27 +12,28 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@cloudleak/aws": "workspace:*",
+    "@cloudleak/collectors": "workspace:*",
+    "@cloudleak/core": "workspace:*",
+    "@cloudleak/db": "workspace:*",
+    "@cloudleak/rules": "workspace:*",
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.0",
     "next": "^15.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@supabase/ssr": "^0.5.0",
-    "@supabase/supabase-js": "^2.45.0",
-    "zod": "^3.23.0",
-    "@cloudleak/core": "workspace:*",
-    "@cloudleak/db": "workspace:*",
-    "@cloudleak/aws": "workspace:*",
-    "@cloudleak/collectors": "workspace:*",
-    "@cloudleak/rules": "workspace:*"
+    "stripe": "^22.2.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@cloudleak/config": "workspace:*",
-    "typescript": "^5.6.0",
-    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@types/node": "^22.0.0",
-    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }

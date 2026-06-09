@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master, main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    name: Build + Push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push web image
+        run: |
+          IMAGE="${{ env.ECR_REGISTRY }}/cloudleak-web:${{ github.sha }}"
+          docker build -f apps/web/Dockerfile -t "$IMAGE" -t "${{ env.ECR_REGISTRY }}/cloudleak-web:latest" .
+          docker push "$IMAGE"
+          docker push "${{ env.ECR_REGISTRY }}/cloudleak-web:latest"
+
+      - name: Build and push worker image
+        run: |
+          IMAGE="${{ env.ECR_REGISTRY }}/cloudleak-worker:${{ github.sha }}"
+          docker build -f apps/worker/Dockerfile -t "$IMAGE" -t "${{ env.ECR_REGISTRY }}/cloudleak-worker:latest" .
+          docker push "$IMAGE"
+          docker push "${{ env.ECR_REGISTRY }}/cloudleak-worker:latest"
+
+      - name: Force ECS redeploy
+        run: |
+          aws ecs update-service --cluster cloudleak --service cloudleak-web --force-new-deployment
+          aws ecs update-service --cluster cloudleak --service cloudleak-worker --force-new-deployment

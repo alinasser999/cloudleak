@@ -11,6 +11,7 @@ const NAV = [
 
 const SETTINGS_NAV = [
   { href: "/settings/aws", label: "AWS Accounts" },
+  { href: "/settings/schedules", label: "Schedules" },
   { href: "/settings/billing", label: "Billing" },
 ];
 

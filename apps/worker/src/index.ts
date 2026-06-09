@@ -17,6 +17,8 @@ try {
 
 import { createServiceClient, ScanRepository } from "@cloudleak/db";
 import { processScan } from "./processor.js";
+import { pollSchedules } from "./scheduler.js";
+// Note: apps/web/server/worker/run.ts contains equivalent logic for the Vercel cron route.
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS ?? "3000");
 
@@ -44,6 +46,11 @@ async function poll(): Promise<void> {
 
 async function run(): Promise<never> {
   while (true) {
+    try {
+      await pollSchedules();
+    } catch (e) {
+      console.error("[worker] scheduler error:", e);
+    }
     try {
       await poll();
     } catch (e) {

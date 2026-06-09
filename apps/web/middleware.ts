@@ -24,13 +24,32 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = req.nextUrl.pathname;
-  const isApp = path.startsWith("/onboarding") || path.startsWith("/settings");
+  const APP_PREFIXES = [
+    "/overview",
+    "/scans",
+    "/resources",
+    "/findings",
+    "/reports",
+    "/settings",
+    "/onboarding",
+  ];
+  const isApp = APP_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
   if (isApp && !user) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const url = new URL("/login", req.url);
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
   }
   return res;
 }
 
 export const config = {
-  matcher: ["/onboarding/:path*", "/settings/:path*"],
+  matcher: [
+    "/overview/:path*",
+    "/scans/:path*",
+    "/resources/:path*",
+    "/findings/:path*",
+    "/reports/:path*",
+    "/settings/:path*",
+    "/onboarding/:path*",
+  ],
 };

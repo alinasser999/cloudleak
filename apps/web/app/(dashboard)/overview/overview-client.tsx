@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { AnimatedNumber, EASE_OUT } from "../../../components/motion";
 
 interface Scan {
   id: string;
@@ -70,17 +72,24 @@ function scanResourceTotal(scan: Scan): number {
   return Object.values(scan.stats.resourceCounts).reduce((a, b) => a + b, 0);
 }
 
+const cardContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE_OUT } },
+};
+
 export function OverviewClient({ organizationId }: { organizationId: string }) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [barsReady, setBarsReady] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/dashboard/summary?organizationId=${organizationId}`);
     if (res.ok) setSummary((await res.json()).summary);
     setLoaded(true);
-    // slight delay so bar widths animate in after paint
-    setTimeout(() => setBarsReady(true), 60);
   }, [organizationId]);
 
   useEffect(() => {
@@ -95,7 +104,12 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
 
   if (isNew) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="max-w-2xl space-y-6"
+      >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
           <p className="mt-1 text-sm text-ink/60">
@@ -112,7 +126,7 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
             , then run a scan to see your waste findings here.
           </p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -123,44 +137,60 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="max-w-5xl space-y-6">
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-        <p className="mt-1 text-sm text-ink/60">
-          Your AWS cost waste at a glance.
-        </p>
-      </div>
+        <p className="mt-1 text-sm text-ink/60">Your AWS cost waste at a glance.</p>
+      </motion.div>
 
       {/* Hero stat cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
+      <motion.div
+        variants={cardContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 gap-4 sm:grid-cols-4"
+      >
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
           <div className="text-xs uppercase tracking-wider text-brand-dark/70">
             Savings opportunity
           </div>
           <div className="mt-1 text-3xl font-semibold tabular-nums text-brand-dark">
-            {usd(summary.totalMonthlySavings)}
+            <AnimatedNumber value={summary.totalMonthlySavings} format={usd} />
             <span className="ml-1 text-sm font-normal text-brand-dark/50">/mo</span>
           </div>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Open findings</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">{summary.openFindingsCount}</div>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            <AnimatedNumber value={summary.openFindingsCount} />
+          </div>
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Resources tracked</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">{summary.resourceCount}</div>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            <AnimatedNumber value={summary.resourceCount} />
+          </div>
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Accounts connected</div>
           <div className="mt-1 text-3xl font-semibold tabular-nums">
-            {summary.connectedAccountCount}
+            <AnimatedNumber value={summary.connectedAccountCount} />
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Middle: breakdown + scans */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Findings breakdown */}
-        <div className="rounded-xl border border-ink/10 p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.15 }}
+          className="rounded-xl border border-ink/10 p-5"
+        >
           <div className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-4">
             Findings breakdown
           </div>
@@ -174,9 +204,8 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
             </p>
           ) : (
             <div className="space-y-4">
-              {/* Severity bars */}
               <div className="space-y-3">
-                {SEVERITY_ORDER.filter((s) => (summary.findingsBySeverity[s] ?? 0) > 0).map((s) => {
+                {SEVERITY_ORDER.filter((s) => (summary.findingsBySeverity[s] ?? 0) > 0).map((s, i) => {
                   const count = summary.findingsBySeverity[s] ?? 0;
                   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                   return (
@@ -186,9 +215,11 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
                         <span className="text-xs text-ink/50">{count}</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-ink/5">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-700 ${SEVERITY_BAR[s]}`}
-                          style={{ width: barsReady ? `${pct}%` : "0%" }}
+                        <motion.div
+                          className={`h-2 rounded-full ${SEVERITY_BAR[s]}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, delay: 0.2 + i * 0.08, ease: "easeOut" }}
                         />
                       </div>
                     </div>
@@ -196,7 +227,6 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
                 })}
               </div>
 
-              {/* By type */}
               {Object.keys(summary.findingsByType).length > 0 && (
                 <div className="border-t border-ink/5 pt-4">
                   <div className="text-xs uppercase tracking-wider text-ink/40 mb-2">By type</div>
@@ -217,10 +247,15 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
               )}
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Recent scans */}
-        <div className="rounded-xl border border-ink/10 p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.22 }}
+          className="rounded-xl border border-ink/10 p-5"
+        >
           <div className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-4">
             Recent scans
           </div>
@@ -282,12 +317,17 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
               </div>
             </>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Top opportunities */}
       {total > 0 && topTypes.length > 0 && (
-        <div className="rounded-xl border border-ink/10 p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.3 }}
+          className="rounded-xl border border-ink/10 p-5"
+        >
           <div className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-4">
             Top opportunities
           </div>
@@ -309,7 +349,7 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

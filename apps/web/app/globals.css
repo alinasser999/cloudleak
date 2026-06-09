@@ -4,8 +4,24 @@
 
 :root {
   color-scheme: light;
+  --brand: #10b981;
+  --brand-dark: #059669;
+  --ink: #0b1220;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
   @apply bg-white text-ink antialiased;
+}
+
+/* Respect reduced-motion globally for CSS-driven animation/transition. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

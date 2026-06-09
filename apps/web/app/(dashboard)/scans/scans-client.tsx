@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Account {
   id: string;
@@ -109,21 +110,34 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
       ) : (
         <div className="flex flex-wrap gap-2">
           {connected.map((a) => (
-            <button
+            <motion.button
               key={a.id}
               onClick={() => runScan(a.id)}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-dark disabled:opacity-50"
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full bg-white ${busy ? "animate-pulse" : ""}`}
               />
               {busy ? "Queuing…" : `Run scan · ${a.accountId ?? a.id.slice(0, 8)}`}
-            </button>
+            </motion.button>
           ))}
         </div>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-sm text-red-600"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-ink/40">History</h2>
@@ -141,8 +155,14 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {scans.map((s) => (
-                  <tr key={s.id} className="border-b border-ink/5 last:border-0 hover:bg-ink/[0.015]">
+                {scans.map((s, i) => (
+                  <motion.tr
+                    key={s.id}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.4), ease: [0.16, 1, 0.3, 1] }}
+                    className="border-b border-ink/5 last:border-0 hover:bg-ink/[0.015]"
+                  >
                     <td className="px-4 py-3 text-ink/70">
                       {s.startedAt ? new Date(s.startedAt).toLocaleString() : "—"}
                     </td>
@@ -153,7 +173,7 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
                       {usd(s.stats?.totalMonthlyCost ?? 0)}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>

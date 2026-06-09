@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
 
 interface Resource {
   id: string;
@@ -20,6 +22,34 @@ const TYPES = [
 
 const label = (t: string) => t.replace(/_/g, " ");
 const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative rounded-full px-3 py-1 capitalize transition-colors duration-150 ${
+        active ? "text-white" : "text-ink/70 hover:bg-ink/10"
+      }`}
+    >
+      {active && (
+        <motion.span
+          layoutId="resource-filter-pill"
+          className="absolute inset-0 rounded-full bg-ink"
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
+        />
+      )}
+      <span className="relative z-10">{children}</span>
+    </button>
+  );
+}
 
 export function ResourcesClient({ organizationId }: { organizationId: string }) {
   const [resources, setResources] = useState<Resource[]>([]);
@@ -55,45 +85,43 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-ink/10 p-4">
+      <motion.div
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+      >
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Total resources</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">{resources.length}</div>
-        </div>
-        <div className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            <AnimatedNumber value={resources.length} />
+          </div>
+        </motion.div>
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
           <div className="text-xs uppercase tracking-wider text-brand-dark/70">
             Est. monthly cost
           </div>
           <div className="mt-1 text-3xl font-semibold tabular-nums text-brand-dark">
-            {usd(totalCost)}
+            <AnimatedNumber value={totalCost} format={usd} />
           </div>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Types</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">{Object.keys(byType).length}</div>
-        </div>
-      </div>
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            <AnimatedNumber value={Object.keys(byType).length} />
+          </div>
+        </motion.div>
+      </motion.div>
 
       {resources.length > 0 && (
         <div className="flex flex-wrap gap-2 text-sm">
-          <button
-            onClick={() => setFilter("all")}
-            className={`rounded-full px-3 py-1 transition ${
-              filter === "all" ? "bg-ink text-white" : "bg-ink/5 text-ink/70 hover:bg-ink/10"
-            }`}
-          >
+          <FilterPill active={filter === "all"} onClick={() => setFilter("all")}>
             All ({resources.length})
-          </button>
+          </FilterPill>
           {TYPES.filter((t) => byType[t]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`rounded-full px-3 py-1 capitalize transition ${
-                filter === t ? "bg-ink text-white" : "bg-ink/5 text-ink/70 hover:bg-ink/10"
-              }`}
-            >
+            <FilterPill key={t} active={filter === t} onClick={() => setFilter(t)}>
               {label(t)} ({byType[t]})
-            </button>
+            </FilterPill>
           ))}
         </div>
       )}
@@ -118,15 +146,21 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
               </tr>
             </thead>
             <tbody>
-              {shown.map((r) => (
-                <tr key={r.id} className="border-b border-ink/5 last:border-0 hover:bg-ink/[0.015]">
+              {shown.map((r, i) => (
+                <motion.tr
+                  key={r.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: Math.min(i * 0.025, 0.4), ease: [0.16, 1, 0.3, 1] }}
+                  className="border-b border-ink/5 last:border-0 hover:bg-ink/[0.015]"
+                >
                   <td className="px-4 py-3 capitalize text-ink/80">{label(r.resourceType)}</td>
                   <td className="px-4 py-3 font-mono text-xs text-ink/70">{r.resourceId}</td>
                   <td className="px-4 py-3 text-ink/60">{r.region}</td>
                   <td className="px-4 py-3 text-right font-medium tabular-nums">
                     {usd(r.estimatedMonthlyCost ?? 0)}
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>

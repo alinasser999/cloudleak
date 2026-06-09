@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { EASE_OUT } from "../../../components/motion";
 
 interface ScanStats {
   resourceCounts: Record<string, number>;
@@ -61,9 +63,11 @@ function resourceTotal(stats: ScanStats): number {
 function formatType(t: string): string {
   return t
     .split("_")
-    .map((w) => (w === "ec2" || w === "ebs" || w === "eip" || w === "rds"
-      ? w.toUpperCase()
-      : w.charAt(0).toUpperCase() + w.slice(1)))
+    .map((w) =>
+      w === "ec2" || w === "ebs" || w === "eip" || w === "rds"
+        ? w.toUpperCase()
+        : w.charAt(0).toUpperCase() + w.slice(1)
+    )
     .join(" ");
 }
 
@@ -79,6 +83,16 @@ const STATUS_LABEL: Record<string, string> = {
   error: "Failed",
   running: "Running",
   queued: "Queued",
+};
+
+const cardContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT } },
 };
 
 export function ReportsClient({ organizationId }: { organizationId: string }) {
@@ -130,7 +144,12 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-start justify-between"
+      >
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
           <p className="mt-1 text-sm text-ink/50">
@@ -138,21 +157,28 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => void sendDigest()}
             disabled={sending}
             className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60"
           >
             {sending ? "Sending…" : sent ? "Sent!" : "Send weekly digest"}
-          </button>
+          </motion.button>
           {sendError && <p className="text-xs text-red-500">{sendError}</p>}
           {sent && <p className="text-xs text-emerald-600">Digest sent to your email.</p>}
         </div>
-      </div>
+      </motion.div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
+      <motion.div
+        variants={cardContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-4 gap-4"
+      >
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-ink/40">
             Savings identified
           </p>
@@ -160,27 +186,32 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
             {usd(summary.totalMonthlySavings)}
             <span className="ml-1 text-sm font-normal text-ink/40">/mo</span>
           </p>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-ink/40">Open findings</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{summary.openFindingsCount}</p>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-ink/40">Total scans</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{allScans.length}</p>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={cardItem} className="rounded-xl border border-ink/10 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-ink/40">
             Resources tracked
           </p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">{summary.resourceCount}</p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Two-column: findings breakdown + scan history */}
       <div className="grid grid-cols-5 gap-6">
         {/* Findings by type */}
-        <div className="col-span-2 rounded-xl border border-ink/10 p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.18 }}
+          className="col-span-2 rounded-xl border border-ink/10 p-5"
+        >
           <p className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-4">
             Findings by type
           </p>
@@ -191,7 +222,10 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
               {Object.entries(summary.findingsByType)
                 .sort(([, a], [, b]) => b - a)
                 .map(([type, count]) => (
-                  <li key={type} className="flex items-center justify-between py-1 border-b border-ink/5 last:border-0">
+                  <li
+                    key={type}
+                    className="flex items-center justify-between py-1 border-b border-ink/5 last:border-0"
+                  >
                     <span className="text-sm">{formatType(type)}</span>
                     <span className="rounded-full bg-ink/10 px-2 py-0.5 text-xs font-medium tabular-nums">
                       {count}
@@ -207,7 +241,7 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
                 By severity
               </p>
               <ul className="space-y-2">
-                {(["critical", "high", "medium", "low"] as const).map((sev) => {
+                {(["critical", "high", "medium", "low"] as const).map((sev, i) => {
                   const count = summary.findingsBySeverity[sev] ?? 0;
                   if (!count) return null;
                   const pct = Math.round((count / summary.openFindingsCount) * 100);
@@ -226,9 +260,11 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
                         <span className="text-ink/50 text-xs">{count}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-ink/5">
-                        <div
+                        <motion.div
                           className={`h-1.5 rounded-full ${fillColor}`}
-                          style={{ width: `${pct}%` }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, delay: 0.3 + i * 0.08, ease: "easeOut" }}
                         />
                       </div>
                     </li>
@@ -237,10 +273,15 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
               </ul>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Scan history */}
-        <div className="col-span-3 rounded-xl border border-ink/10 p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.24 }}
+          className="col-span-3 rounded-xl border border-ink/10 p-5"
+        >
           <p className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-4">
             Scan history
           </p>
@@ -283,11 +324,16 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
               </tbody>
             </table>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Digest info */}
-      <div className="rounded-xl border border-ink/10 bg-ink/[0.02] p-5">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.35 }}
+        className="rounded-xl border border-ink/10 bg-ink/[0.02] p-5"
+      >
         <p className="text-sm font-semibold uppercase tracking-wider text-ink/50 mb-2">
           Weekly digest
         </p>
@@ -298,7 +344,7 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
           <code className="rounded bg-ink/10 px-1 text-xs">POST /api/reports/digest</code> endpoint
           via a cron job or Supabase Edge Function.
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

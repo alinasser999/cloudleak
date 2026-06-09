@@ -8,7 +8,16 @@ export async function POST(req: Request) {
   // Vercel sets Authorization: Bearer <CRON_SECRET> on cron invocations.
   // When called manually, pass the same header.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+  if (!secret) {
+    // Fail closed in production: an unprotected worker endpoint lets anyone
+    // trigger scans (cost/abuse). Only allow the no-secret path in local dev.
+    if (isProd) {
+      console.error("[cron] CRON_SECRET not set — refusing to run in production");
+      return NextResponse.json({ error: "Worker not configured" }, { status: 503 });
+    }
+  } else {
     const auth = req.headers.get("authorization");
     if (auth !== `Bearer ${secret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

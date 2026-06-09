@@ -32,6 +32,9 @@ importers:
       '@cloudleak/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@cloudleak/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       '@supabase/ssr':
         specifier: ^0.5.0
         version: 0.5.2(@supabase/supabase-js@2.107.0)
@@ -163,6 +166,47 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.0
         version: 2.107.0
+    devDependencies:
+      '@cloudleak/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.20
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.20)
+
+  packages/remediation:
+    dependencies:
+      '@cloudleak/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@cloudleak/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.20
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.20)
+
+  packages/rules:
+    dependencies:
+      '@cloudleak/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cloudleak/remediation':
+        specifier: workspace:*
+        version: link:../remediation
     devDependencies:
       '@cloudleak/config':
         specifier: workspace:*

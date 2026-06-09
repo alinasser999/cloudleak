@@ -1,4 +1,5 @@
 import type { NewFindingRow, Resource } from "@cloudleak/core";
+import { generateRemediation } from "@cloudleak/remediation";
 import type { Rule } from "./rule.js";
 import { stoppedEc2Rule } from "./stopped-ec2.js";
 import { unattachedEbsRule } from "./unattached-ebs.js";
@@ -43,7 +44,10 @@ export async function runDetection(input: RunDetectionInput): Promise<{ count: n
     for (const rule of rules) {
       try {
         const finding = rule.check(resource);
-        if (finding) findings.push(finding);
+        if (finding) {
+          const rem = generateRemediation(finding.findingType, resource);
+          findings.push({ ...finding, terraformFix: rem.terraform, manualFix: rem.manual });
+        }
       } catch (e) {
         console.error(`Rule check failed on resource ${resource.id}:`, e);
       }

@@ -124,6 +124,8 @@ export interface NewFindingRow {
   title: string;
   description: string;
   status: FindingStatus;
+  terraformFix?: string;
+  manualFix?: string;
 }
 
 export interface Finding {
@@ -137,5 +139,7 @@ export interface Finding {
   title: string;
   description: string | null;
   status: FindingStatus;
+  terraformFix: string | null;
+  manualFix: string | null;
   createdAt: string;
 }

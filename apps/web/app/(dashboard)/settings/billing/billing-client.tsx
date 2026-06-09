@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { fadeUp, staggerParent } from "../../../../components/motion";
 
 interface Subscription {
   plan: string | null;
@@ -140,12 +142,20 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {/* Plan cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <motion.div
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-3 gap-4"
+      >
         {PLANS.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           return (
-            <div
+            <motion.div
               key={plan.id}
+              variants={fadeUp}
+              whileHover={isCurrent ? undefined : { y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
               className={`rounded-xl border p-5 ${
                 isCurrent ? "border-brand bg-brand/[0.03]" : "border-ink/10"
               }`}
@@ -164,28 +174,40 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
               <ul className="mt-4 space-y-1.5 text-sm text-ink/70">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <span className="text-brand">✓</span> {f}
+                    <svg
+                      className="h-4 w-4 shrink-0 text-brand"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
+                    </svg>
+                    {f}
                   </li>
                 ))}
               </ul>
               {!isCurrent && plan.priceEnvKey && (
-                <button
+                <motion.button
                   onClick={() => void upgrade(plan.priceEnvKey!)}
                   disabled={busy === plan.priceEnvKey}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   className="mt-4 w-full rounded-lg bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
                 >
                   {busy === plan.priceEnvKey ? "Redirecting…" : `Upgrade to ${plan.label}`}
-                </button>
+                </motion.button>
               )}
               {plan.id === "starter" && !isCurrent && (
                 <p className="mt-4 text-xs text-ink/40 text-center">
                   Downgrade via billing portal
                 </p>
               )}
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

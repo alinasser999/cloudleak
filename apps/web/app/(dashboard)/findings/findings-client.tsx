@@ -1,5 +1,7 @@
 "use client";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
 
 interface Finding {
   id: string;
@@ -31,13 +33,6 @@ const SEVERITY_DOT: Record<string, string> = {
   high: "bg-amber-500",
   medium: "bg-yellow-500",
   low: "bg-sky-500",
-};
-
-const SEVERITY_BORDER: Record<string, string> = {
-  critical: "border-l-red-400",
-  high: "border-l-amber-400",
-  medium: "border-l-yellow-400",
-  low: "border-l-sky-300",
 };
 
 function SeverityBadge({ severity }: { severity: string }) {
@@ -117,6 +112,34 @@ function RemediationPanel({ finding }: { finding: Finding }) {
   );
 }
 
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative rounded-full px-3 py-1 capitalize transition-colors duration-150 ${
+        active ? "text-white" : "bg-ink/5 text-ink/70 hover:bg-ink/10"
+      }`}
+    >
+      {active && (
+        <motion.span
+          layoutId="findings-filter-pill"
+          className="absolute inset-0 rounded-full bg-ink"
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
+        />
+      )}
+      <span className="relative z-10">{children}</span>
+    </button>
+  );
+}
+
 export function FindingsClient({ organizationId }: { organizationId: string }) {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -192,20 +215,27 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-ink/10 p-4">
+      <motion.div
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+      >
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">Open findings</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">{openFindings.length}</div>
-        </div>
-        <div className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
+          <div className="mt-1 text-3xl font-semibold tabular-nums">
+            <AnimatedNumber value={openFindings.length} />
+          </div>
+        </motion.div>
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
           <div className="text-xs uppercase tracking-wider text-brand-dark/70">
             Est. monthly savings
           </div>
           <div className="mt-1 text-3xl font-semibold tabular-nums text-brand-dark">
-            {usd(totalSavings)}
+            <AnimatedNumber value={totalSavings} format={usd} />
           </div>
-        </div>
-        <div className="rounded-xl border border-ink/10 p-4">
+        </motion.div>
+        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
           <div className="text-xs uppercase tracking-wider text-ink/40">By severity</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {SEVERITY_ORDER.filter((s) => countBySeverity[s]).map((s) => (
@@ -219,35 +249,24 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
             ))}
             {openFindings.length === 0 && <span className="text-sm text-ink/40">—</span>}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Filters */}
       {findings.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSeverityFilter("all")}
-              className={`rounded-full px-3 py-1 transition ${
-                severityFilter === "all"
-                  ? "bg-ink text-white"
-                  : "bg-ink/5 text-ink/70 hover:bg-ink/10"
-              }`}
-            >
+            <FilterPill active={severityFilter === "all"} onClick={() => setSeverityFilter("all")}>
               All ({openFindings.length})
-            </button>
+            </FilterPill>
             {activeSeverities.map((s) => (
-              <button
+              <FilterPill
                 key={s}
+                active={severityFilter === s}
                 onClick={() => setSeverityFilter(s)}
-                className={`rounded-full px-3 py-1 capitalize transition ${
-                  severityFilter === s
-                    ? "bg-ink text-white"
-                    : "bg-ink/5 text-ink/70 hover:bg-ink/10"
-                }`}
               >
                 {s} ({countBySeverity[s] ?? 0})
-              </button>
+              </FilterPill>
             ))}
           </div>
           {dismissedFindings.length > 0 && (
@@ -298,9 +317,9 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                 return (
                   <Fragment key={f.id}>
                     <tr
-                      className={`border-b border-l-2 border-ink/5 transition last:border-b-0 hover:bg-ink/[0.015] ${
-                        SEVERITY_BORDER[f.severity] ?? "border-l-ink/10"
-                      } ${isDismissed ? "opacity-40" : ""}`}
+                      className={`border-b border-ink/5 transition-colors last:border-b-0 hover:bg-ink/[0.015] ${
+                        isDismissed ? "opacity-40" : ""
+                      }`}
                     >
                       <td className="px-4 py-3">
                         <SeverityBadge severity={f.severity} />
@@ -343,13 +362,23 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                         </div>
                       </td>
                     </tr>
-                    {isExpanded && (
-                      <tr className="border-b border-ink/5 bg-ink/[0.02]">
-                        <td colSpan={5}>
-                          <RemediationPanel finding={f} />
-                        </td>
-                      </tr>
-                    )}
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <tr className="bg-ink/[0.02]">
+                          <td colSpan={5} className="p-0">
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                              className="overflow-hidden border-b border-ink/5"
+                            >
+                              <RemediationPanel finding={f} />
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
                   </Fragment>
                 );
               })}

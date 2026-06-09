@@ -1,6 +1,7 @@
 import {
   createUserClient,
   AwsAccountRepository,
+  FindingRepository,
   MembershipRepository,
   ResourceRepository,
   ScanRepository,
@@ -8,6 +9,7 @@ import {
 } from "@cloudleak/db";
 import { ForbiddenError, ValidationError, type Scan } from "@cloudleak/core";
 import { runScan } from "@cloudleak/collectors";
+import { runDetection } from "@cloudleak/rules";
 import {
   FakeAwsInventoryClient,
   RealAwsInventoryClient,
@@ -61,13 +63,23 @@ export class ScanService {
       throw new ValidationError("AWS account is not connected");
     }
     const client = await this.buildClient(acct.roleArn, acct.externalId);
-    return runScan({
+    const scan = await runScan({
       awsAccount: { id: acct.id, organizationId },
       regions: this.regions(),
       client,
       resourceRepo: new ResourceRepository(db),
       scanRepo: new ScanRepository(db),
     });
+    try {
+      await runDetection({
+        awsAccount: { id: acct.id, organizationId },
+        resourceRepo: new ResourceRepository(db),
+        findingRepo: new FindingRepository(db),
+      });
+    } catch (e) {
+      console.error("Detection failed (non-fatal):", e);
+    }
+    return scan;
   }
 
   async list(userId: string, organizationId: string): Promise<Scan[]> {

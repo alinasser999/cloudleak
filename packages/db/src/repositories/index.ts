@@ -4,3 +4,4 @@ export * from "./invitation.js";
 export * from "./aws-account.js";
 export * from "./resource.js";
 export * from "./scan.js";
+export * from "./finding.js";

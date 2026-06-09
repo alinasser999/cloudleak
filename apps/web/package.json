@@ -21,7 +21,8 @@
     "@cloudleak/core": "workspace:*",
     "@cloudleak/db": "workspace:*",
     "@cloudleak/aws": "workspace:*",
-    "@cloudleak/collectors": "workspace:*"
+    "@cloudleak/collectors": "workspace:*",
+    "@cloudleak/rules": "workspace:*"
   },
   "devDependencies": {
     "@cloudleak/config": "workspace:*",

@@ -4,10 +4,11 @@ import type { ReactNode } from "react";
 const NAV = [
   { href: "/scans", label: "Scans" },
   { href: "/resources", label: "Resources" },
+  { href: "/findings", label: "Findings" },
   { href: "/settings/aws", label: "Settings" },
 ];
 
-const COMING_SOON = ["Overview", "Findings", "Reports"];
+const COMING_SOON = ["Overview", "Reports"];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

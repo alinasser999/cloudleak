@@ -2,19 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * CloudLeak — "Drenched Emerald" theme.
+ * The surface IS the color: a deep emerald canvas, ivory-mint ink,
+ * money-green that glows. Tokens are RGB channels so Tailwind's
+ * `/opacity` modifiers work (rgb(var(--x) / <alpha-value>)).
+ */
 :root {
-  color-scheme: light;
-  --brand: #10b981;
-  --brand-dark: #059669;
-  --ink: #0b1220;
+  color-scheme: dark;
+
+  --canvas: 4 19 13; /* deepest body */
+  --canvas-2: 6 28 19; /* gradient lift */
+  --surface: 9 36 25; /* panels */
+  --surface-raised: 14 47 33; /* cards on panels / hover */
+  --line: 110 231 183; /* emerald-300, used at low alpha for hairlines */
+  --ink: 235 253 245; /* primary text (mint cream) */
+  --ink-muted: 158 214 187; /* secondary text */
+  --ink-faint: 108 160 136; /* tertiary / large text only */
+  --brand: 16 185 129; /* emerald signal */
+  --brand-bright: 53 233 172; /* glowing money / accent */
+  --brand-deep: 5 150 105;
+  --accent: 45 212 191; /* teal, for data-viz variety */
+
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body {
-  @apply bg-white text-ink antialiased;
+@layer base {
+  body {
+    @apply bg-canvas text-ink antialiased;
+    min-height: 100dvh;
+    font-feature-settings: "cv05", "ss01";
+  }
+
+  /* The drench: a fixed atmospheric field behind every page. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 640px at 50% -14%, rgb(var(--brand) / 0.22), transparent 60%),
+      radial-gradient(820px 520px at 94% 2%, rgb(var(--accent) / 0.13), transparent 55%),
+      radial-gradient(760px 760px at -4% 102%, rgb(var(--brand-deep) / 0.18), transparent 60%),
+      linear-gradient(180deg, rgb(var(--canvas-2)), rgb(var(--canvas)) 58%);
+  }
+
+  ::selection {
+    background: rgb(var(--brand-bright) / 0.28);
+    color: rgb(var(--ink));
+  }
+
+  * {
+    scrollbar-color: rgb(var(--line) / 0.18) transparent;
+    scrollbar-width: thin;
+  }
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line) / 0.14);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--line) / 0.26);
+    background-clip: padding-box;
+  }
+
+  input,
+  textarea,
+  select {
+    color-scheme: dark;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--ink-muted) / 0.55);
+  }
 }
 
-/* Respect reduced-motion globally for CSS-driven animation/transition. */
+@layer utilities {
+  /* Faint blueprint grid — infra texture, masked to fade out. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(var(--line) / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--line) / 0.06) 1px, transparent 1px);
+    background-size: 46px 46px;
+  }
+  .bg-grid-fade {
+    -webkit-mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 75%);
+    mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 75%);
+  }
+  .text-glow {
+    text-shadow: 0 0 28px rgb(var(--brand-bright) / 0.5);
+  }
+  .panel-hairline {
+    box-shadow: inset 0 1px 0 0 rgb(var(--line) / 0.08);
+  }
+  .ring-glow {
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--line) / 0.1),
+      0 24px 70px -28px rgb(var(--brand) / 0.6);
+  }
+}
+
+/* Reduced-motion: collapse CSS-driven animation/transition. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

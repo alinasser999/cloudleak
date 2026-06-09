@@ -2,83 +2,102 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { ToastProvider } from "../../components/toast";
+import {
+  IconDashboard,
+  IconScan,
+  IconServer,
+  IconAlert,
+  IconReport,
+  IconCloud,
+  IconClock,
+  IconCard,
+  IconLeaf,
+  IconMenu,
+  IconX,
+  IconArrowRight,
+} from "../../components/icons";
 
-const NAV = [
-  { href: "/overview", label: "Overview" },
-  { href: "/scans", label: "Scans" },
-  { href: "/resources", label: "Resources" },
-  { href: "/findings", label: "Findings" },
-  { href: "/reports", label: "Reports" },
+type Icon = ComponentType<SVGProps<SVGSVGElement>>;
+type NavItem = { href: string; label: string; icon: Icon };
+
+const NAV: NavItem[] = [
+  { href: "/overview", label: "Overview", icon: IconDashboard },
+  { href: "/scans", label: "Scans", icon: IconScan },
+  { href: "/resources", label: "Resources", icon: IconServer },
+  { href: "/findings", label: "Findings", icon: IconAlert },
+  { href: "/reports", label: "Reports", icon: IconReport },
 ];
 
-const SETTINGS_NAV = [
-  { href: "/settings/aws", label: "AWS Accounts" },
-  { href: "/settings/schedules", label: "Schedules" },
-  { href: "/settings/billing", label: "Billing" },
+const SETTINGS_NAV: NavItem[] = [
+  { href: "/settings/aws", label: "AWS Accounts", icon: IconCloud },
+  { href: "/settings/schedules", label: "Schedules", icon: IconClock },
+  { href: "/settings/billing", label: "Billing", icon: IconCard },
 ];
 
-function NavLink({
-  href,
-  label,
-  active,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-}) {
+function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolean }) {
   return (
     <Link
       href={href}
-      className={`relative block rounded-md px-2 py-1.5 text-sm font-medium transition-colors duration-150 ${
-        active ? "text-ink" : "text-ink/55 hover:text-ink hover:bg-ink/[0.04]"
+      className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+        active ? "text-ink" : "text-ink-muted hover:bg-line/5 hover:text-ink"
       }`}
     >
       {active && (
         <motion.span
           layoutId="nav-active"
-          className="absolute inset-0 rounded-md bg-brand/10"
+          className="absolute inset-0 rounded-lg border border-brand/25 bg-brand/12"
           transition={{ type: "spring", stiffness: 500, damping: 38 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2">
-        {active && (
-          <motion.span
-            layoutId="nav-active-dot"
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
-            transition={{ type: "spring", stiffness: 500, damping: 38 }}
-          />
-        )}
-        {label}
-      </span>
+      <Icon className={`relative z-10 h-[18px] w-[18px] ${active ? "text-brand-bright" : ""}`} />
+      <span className="relative z-10">{label}</span>
     </Link>
   );
 }
 
 function NavContent({ isActive }: { isActive: (href: string) => boolean }) {
   return (
-    <>
-      <Link href="/overview" className="block px-2 text-lg font-semibold text-brand">
+    <div className="flex h-full flex-col">
+      <Link href="/overview" className="flex items-center gap-2 px-3 text-base font-semibold text-ink">
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand/15 text-brand-bright">
+          <IconLeaf className="h-4 w-4" />
+        </span>
         CloudLeak
       </Link>
-      <nav className="mt-6 space-y-0.5">
+
+      <nav className="mt-7 space-y-1">
         {NAV.map((item) => (
           <NavLink key={item.href} {...item} active={isActive(item.href)} />
         ))}
       </nav>
-      <div className="mt-6">
-        <p className="px-2 text-[10px] font-semibold uppercase tracking-widest text-ink/30">
+
+      <div className="mt-7">
+        <p className="px-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           Settings
         </p>
-        <nav className="mt-1 space-y-0.5">
+        <nav className="mt-2 space-y-1">
           {SETTINGS_NAV.map((item) => (
             <NavLink key={item.href} {...item} active={isActive(item.href)} />
           ))}
         </nav>
       </div>
-    </>
+
+      {/* Footer CTA */}
+      <Link
+        href="/scans"
+        className="group mt-auto overflow-hidden rounded-xl border border-brand/20 bg-brand/[0.06] p-4 transition-colors hover:bg-brand/[0.1]"
+      >
+        <p className="text-sm font-semibold text-ink">Spot-check your spend</p>
+        <p className="mt-1 text-xs text-ink-muted">Run a fresh scan to surface new waste.</p>
+        <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-bright">
+          Run a scan
+          <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </Link>
+    </div>
   );
 }
 
@@ -87,7 +106,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-  // Close the mobile drawer whenever the route changes.
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
@@ -97,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <ToastProvider>
         <div className="flex min-h-dvh">
           {/* Desktop sidebar */}
-          <aside className="hidden w-56 shrink-0 border-r border-ink/10 px-4 py-6 md:block">
+          <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-line/10 bg-surface/40 px-4 py-6 backdrop-blur-xl md:block">
             <NavContent isActive={isActive} />
           </aside>
 
@@ -110,7 +128,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setDrawerOpen(false)}
-                  className="fixed inset-0 z-40 bg-ink/40 md:hidden"
+                  className="fixed inset-0 z-40 bg-canvas/70 backdrop-blur-sm md:hidden"
                   aria-hidden="true"
                 />
                 <motion.aside
@@ -118,8 +136,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   animate={{ x: 0 }}
                   exit={{ x: "-100%" }}
                   transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                  className="fixed inset-y-0 left-0 z-50 w-64 border-r border-ink/10 bg-white px-4 py-6 md:hidden"
+                  className="fixed inset-y-0 left-0 z-50 w-64 border-r border-line/10 bg-surface px-4 py-6 md:hidden"
                 >
+                  <button
+                    onClick={() => setDrawerOpen(false)}
+                    aria-label="Close navigation menu"
+                    className="absolute right-3 top-5 rounded-lg p-1.5 text-ink-muted hover:bg-line/10 hover:text-ink"
+                  >
+                    <IconX className="h-5 w-5" />
+                  </button>
                   <NavContent isActive={isActive} />
                 </motion.aside>
               </>
@@ -128,20 +153,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Mobile top bar */}
-            <header className="flex items-center gap-3 border-b border-ink/10 px-4 py-3 md:hidden">
+            <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line/10 bg-canvas/70 px-4 py-3 backdrop-blur-xl md:hidden">
               <button
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Open navigation menu"
-                className="rounded-md p-1.5 text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink"
+                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-line/10 hover:text-ink"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-                </svg>
+                <IconMenu className="h-5 w-5" />
               </button>
-              <span className="text-base font-semibold text-brand">CloudLeak</span>
+              <span className="flex items-center gap-2 text-base font-semibold text-ink">
+                <IconLeaf className="h-4 w-4 text-brand-bright" />
+                CloudLeak
+              </span>
             </header>
 
-            <main className="flex-1 px-5 py-6 sm:px-8 sm:py-8">
+            <main className="flex-1 px-5 py-7 sm:px-8 sm:py-9">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={pathname}

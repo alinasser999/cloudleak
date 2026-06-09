@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_OUT } from "../../../../components/motion";
+import { Panel, Eyebrow } from "../../../../components/ui";
+import { IconClock, IconInfo, IconArrowRight } from "../../../../components/icons";
+
+// Concrete colors for framer color interpolation (CSS vars can't be tweened).
+const BRAND = "#10b981";
+const OFF = "rgba(110,231,183,0.14)";
 
 interface Schedule {
   id: string;
@@ -68,10 +74,10 @@ function FrequencyToggle({
 }) {
   const idx = FREQ_OPTIONS.findIndex((o) => o.value === value);
   return (
-    <div className="relative flex rounded-lg bg-ink/[0.04] p-0.5 border border-ink/10">
+    <div className="relative flex rounded-xl border border-line/10 bg-line/[0.04] p-0.5">
       <motion.span
         layoutId={`freq-pill-${id}`}
-        className="pointer-events-none absolute top-0.5 bottom-0.5 rounded-md bg-white shadow-sm border border-ink/10"
+        className="pointer-events-none absolute bottom-0.5 top-0.5 rounded-lg border border-line/15 bg-surface-raised shadow-sm"
         style={{ width: `calc(${100 / 3}% - 2px)`, left: `calc(${(idx * 100) / 3}% + 2px)` }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
       />
@@ -79,8 +85,8 @@ function FrequencyToggle({
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`relative z-10 flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors duration-150 ${
-            value === opt.value ? "text-ink" : "text-ink/40 hover:text-ink/60"
+          className={`relative z-10 flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors duration-150 ${
+            value === opt.value ? "text-ink" : "text-ink-muted hover:text-ink"
           }`}
         >
           {opt.label}
@@ -95,7 +101,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
     <button
       onClick={() => onChange(!on)}
       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
-        on ? "bg-brand" : "bg-ink/15"
+        on ? "bg-brand" : "bg-line/15"
       }`}
       role="switch"
       aria-checked={on}
@@ -103,7 +109,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       <motion.span
         layout
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        className="pointer-events-none inline-block h-3.5 w-3.5 rounded-full bg-white shadow"
+        className="pointer-events-none inline-block h-3.5 w-3.5 rounded-full bg-ink shadow"
         style={{ x: on ? 16 : 2 }}
       />
     </button>
@@ -127,8 +133,7 @@ function ScheduleCard({
     error: null,
   });
 
-  const dirty =
-    state.frequency !== schedule.frequency || state.enabled !== schedule.enabled;
+  const dirty = state.frequency !== schedule.frequency || state.enabled !== schedule.enabled;
 
   async function save() {
     setState((s) => ({ ...s, saving: true, error: null }));
@@ -163,28 +168,20 @@ function ScheduleCard({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="group rounded-xl border border-ink/10 bg-white overflow-hidden hover:shadow-sm transition-shadow duration-200"
+      className="overflow-hidden rounded-2xl border border-line/10 bg-surface/60 panel-hairline"
     >
-      <motion.div
-        className="h-0.5"
-        animate={{ backgroundColor: isActive ? "var(--brand)" : "rgba(0,0,0,0.07)" }}
-        transition={{ duration: 0.3 }}
-      />
+      <motion.div className="h-0.5" animate={{ backgroundColor: isActive ? BRAND : OFF }} transition={{ duration: 0.3 }} />
 
       <div className="p-5">
-        <div className="flex items-start justify-between mb-5">
+        <div className="mb-5 flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/35 mb-1">
-              AWS Account
-            </p>
-            <p className="font-mono text-sm font-medium text-ink">
-              {schedule.awsAccountIdentifier ?? (
-                <span className="text-ink/40 italic">pending</span>
-              )}
+            <Eyebrow>AWS Account</Eyebrow>
+            <p className="mt-1 font-mono text-sm font-medium text-ink">
+              {schedule.awsAccountIdentifier ?? <span className="italic text-ink-muted">pending</span>}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-ink/40 font-medium">
+            <span className="text-xs font-medium text-ink-muted">
               {state.enabled ? "Enabled" : "Disabled"}
             </span>
             <Toggle on={state.enabled} onChange={(v) => setState((s) => ({ ...s, enabled: v }))} />
@@ -192,34 +189,26 @@ function ScheduleCard({
         </div>
 
         <div className="mb-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/35 mb-2">
-            Frequency
-          </p>
-          <FrequencyToggle
-            id={schedule.awsAccountId}
-            value={state.frequency}
-            onChange={(v) => setState((s) => ({ ...s, frequency: v }))}
-          />
+          <Eyebrow>Frequency</Eyebrow>
+          <div className="mt-2">
+            <FrequencyToggle
+              id={schedule.awsAccountId}
+              value={state.frequency}
+              onChange={(v) => setState((s) => ({ ...s, frequency: v }))}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="rounded-lg bg-ink/[0.025] border border-ink/5 px-3 py-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/30 mb-1">
-              Next scan
-            </p>
-            <p className="text-xs font-medium text-ink/70 font-mono">
-              {!isActive
-                ? "—"
-                : schedule.nextScanAt
-                  ? timeUntil(schedule.nextScanAt)
-                  : "scheduling…"}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-line/8 bg-canvas/40 px-3 py-2.5">
+            <Eyebrow>Next scan</Eyebrow>
+            <p className="mt-1 font-mono text-xs font-medium text-ink-muted">
+              {!isActive ? "—" : schedule.nextScanAt ? timeUntil(schedule.nextScanAt) : "scheduling…"}
             </p>
           </div>
-          <div className="rounded-lg bg-ink/[0.025] border border-ink/5 px-3 py-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/30 mb-1">
-              Last scan
-            </p>
-            <p className="text-xs font-medium text-ink/70 font-mono">
+          <div className="rounded-xl border border-line/8 bg-canvas/40 px-3 py-2.5">
+            <Eyebrow>Last scan</Eyebrow>
+            <p className="mt-1 font-mono text-xs font-medium text-ink-muted">
               {schedule.lastScanAt ? timeAgo(schedule.lastScanAt) : "never"}
             </p>
           </div>
@@ -231,7 +220,7 @@ function ScheduleCard({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="text-xs text-red-500 mb-3 overflow-hidden"
+              className="mb-3 overflow-hidden text-xs text-rose-300"
             >
               {state.error}
             </motion.p>
@@ -241,11 +230,11 @@ function ScheduleCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <motion.span
-              animate={{ backgroundColor: isActive ? "var(--brand)" : "rgba(0,0,0,0.1)" }}
+              animate={{ backgroundColor: isActive ? BRAND : OFF }}
               transition={{ duration: 0.3 }}
               className={`inline-block h-1.5 w-1.5 rounded-full ${isActive ? "animate-pulse" : ""}`}
             />
-            <span className="text-[11px] text-ink/40">
+            <span className="text-[11px] text-ink-muted">
               {isActive
                 ? state.frequency === "daily"
                   ? "Scans every 24 hours"
@@ -257,12 +246,12 @@ function ScheduleCard({
             whileTap={{ scale: 0.96 }}
             onClick={() => void save()}
             disabled={state.saving || !dirty}
-            className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
+            className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${
               state.saved
-                ? "bg-brand/10 text-brand-dark"
+                ? "bg-brand/15 text-brand-bright"
                 : dirty
-                  ? "bg-brand text-white hover:bg-brand-dark"
-                  : "bg-ink/5 text-ink/30 cursor-default"
+                  ? "bg-brand text-canvas shadow-glow-sm hover:bg-brand-bright"
+                  : "cursor-default bg-line/8 text-ink-faint"
             } disabled:cursor-not-allowed`}
           >
             {state.saving ? "Saving…" : state.saved ? "Saved ✓" : "Save"}
@@ -280,24 +269,24 @@ function SkeletonCard({ index }: { index: number }) {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="rounded-xl border border-ink/10 overflow-hidden"
+      className="overflow-hidden rounded-2xl border border-line/10 bg-surface/40"
     >
-      <div className="h-0.5 bg-ink/5" />
-      <div className="p-5 space-y-4">
+      <div className="h-0.5 bg-line/8" />
+      <div className="space-y-4 p-5">
         <div className="flex justify-between">
           <div className="space-y-1.5">
-            <div className="h-2 w-20 rounded bg-ink/8 animate-pulse" />
-            <div className="h-4 w-32 rounded bg-ink/8 animate-pulse" />
+            <div className="h-2 w-20 animate-pulse rounded bg-line/8" />
+            <div className="h-4 w-32 animate-pulse rounded bg-line/8" />
           </div>
-          <div className="h-5 w-9 rounded-full bg-ink/8 animate-pulse" />
+          <div className="h-5 w-9 animate-pulse rounded-full bg-line/8" />
         </div>
-        <div className="h-8 rounded-lg bg-ink/5 animate-pulse" />
+        <div className="h-8 animate-pulse rounded-lg bg-line/5" />
         <div className="grid grid-cols-2 gap-3">
-          <div className="h-14 rounded-lg bg-ink/5 animate-pulse" />
-          <div className="h-14 rounded-lg bg-ink/5 animate-pulse" />
+          <div className="h-14 animate-pulse rounded-lg bg-line/5" />
+          <div className="h-14 animate-pulse rounded-lg bg-line/5" />
         </div>
         <div className="flex justify-end">
-          <div className="h-7 w-16 rounded-lg bg-ink/5 animate-pulse" />
+          <div className="h-7 w-16 animate-pulse rounded-lg bg-line/5" />
         </div>
       </div>
     </motion.div>
@@ -314,7 +303,7 @@ export function SchedulesClient({ organizationId }: { organizationId: string }) 
   }, [organizationId]);
 
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="max-w-2xl space-y-7">
       <motion.div
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -322,16 +311,14 @@ export function SchedulesClient({ organizationId }: { organizationId: string }) 
         className="flex items-end justify-between"
       >
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Scan schedules</h1>
-          <p className="mt-1 text-sm text-ink/50">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">Scan schedules</h1>
+          <p className="mt-1.5 text-sm text-ink-muted">
             Automatically scan connected accounts on a recurring basis.
           </p>
         </div>
-        <div className="rounded-lg border border-ink/10 bg-ink/[0.02] px-3 py-2 text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/30">
-            Timezone
-          </p>
-          <p className="text-xs font-mono font-medium text-ink/60">UTC</p>
+        <div className="rounded-xl border border-line/10 bg-surface/60 px-3 py-2 text-right">
+          <Eyebrow>Timezone</Eyebrow>
+          <p className="mt-0.5 font-mono text-xs font-medium text-ink-muted">UTC</p>
         </div>
       </motion.div>
 
@@ -346,33 +333,28 @@ export function SchedulesClient({ organizationId }: { organizationId: string }) 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.25 }}
-          className="rounded-xl border border-ink/10 p-10 text-center"
         >
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-ink/5">
-            <svg className="h-5 w-5 text-ink/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-          </div>
-          <p className="text-sm font-medium text-ink/60 mb-1">No connected accounts</p>
-          <p className="text-xs text-ink/40">
-            Connect an AWS account first, then configure its scan schedule here.
-          </p>
-          <Link
-            href="/settings/aws"
-            className="mt-4 inline-block rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white hover:bg-brand-dark"
-          >
-            Connect AWS account
-          </Link>
+          <Panel className="p-10 text-center">
+            <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-brand/15 text-brand-bright">
+              <IconClock className="h-5 w-5" />
+            </span>
+            <p className="mt-4 text-sm font-medium text-ink">No connected accounts</p>
+            <p className="mt-1 text-xs text-ink-muted">
+              Connect an AWS account first, then configure its scan schedule here.
+            </p>
+            <Link
+              href="/settings/aws"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-canvas shadow-glow-sm hover:bg-brand-bright"
+            >
+              Connect AWS account
+              <IconArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Panel>
         </motion.div>
       ) : (
         <div className="space-y-4">
           {schedules.map((s, i) => (
-            <ScheduleCard
-              key={s.id}
-              schedule={s}
-              organizationId={organizationId}
-              index={i}
-            />
+            <ScheduleCard key={s.id} schedule={s} organizationId={organizationId} index={i} />
           ))}
         </div>
       )}
@@ -384,14 +366,12 @@ export function SchedulesClient({ organizationId }: { organizationId: string }) 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="rounded-lg border border-ink/10 bg-ink/[0.015] px-4 py-3 flex gap-3"
+            className="flex gap-3 rounded-xl border border-line/10 bg-surface/40 px-4 py-3"
           >
-            <svg className="mt-0.5 h-4 w-4 shrink-0 text-ink/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-            </svg>
-            <p className="text-xs text-ink/50 leading-relaxed">
-              Scheduled scans run via the CloudLeak worker process. Ensure the worker is running
-              in production. Daily scans trigger at midnight UTC; weekly scans trigger on Mondays.
+            <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted/60" />
+            <p className="text-xs leading-relaxed text-ink-muted">
+              Scheduled scans run via the CloudLeak worker process. Ensure the worker is running in
+              production. Daily scans trigger at midnight UTC; weekly scans trigger on Mondays.
             </p>
           </motion.div>
         )}

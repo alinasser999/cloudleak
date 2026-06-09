@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeUp, staggerParent } from "../../../../components/motion";
 import { useToast } from "../../../../components/toast";
+import { Panel } from "../../../../components/ui";
+import { IconCheck, IconCard } from "../../../../components/icons";
 
 interface Subscription {
   plan: string | null;
@@ -24,6 +26,7 @@ const PLANS = [
     price: "Free",
     features: ["1 AWS account", "50 findings/scan", "Weekly digest"],
     priceEnvKey: null,
+    popular: false,
   },
   {
     id: "growth",
@@ -31,6 +34,7 @@ const PLANS = [
     price: "$49/mo",
     features: ["5 AWS accounts", "Unlimited findings", "Weekly digest", "Priority support"],
     priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_GROWTH",
+    popular: true,
   },
   {
     id: "agency",
@@ -44,6 +48,7 @@ const PLANS = [
       "SSO",
     ],
     priceEnvKey: "NEXT_PUBLIC_STRIPE_PRICE_AGENCY",
+    popular: false,
   },
 ] as const;
 
@@ -100,24 +105,29 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
     }
   }
 
-  if (!data) return <p className="text-sm text-ink/40">Loading…</p>;
+  if (!data) return <p className="text-sm text-ink-muted">Loading…</p>;
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
-        <p className="mt-1 text-sm text-ink/50">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Billing</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
           Manage your subscription plan and payment details.
         </p>
       </div>
 
       {/* Current plan badge */}
-      <div className="flex items-center gap-3 rounded-xl border border-ink/10 p-4">
+      <Panel className="flex items-center gap-3 p-4">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand-bright">
+          <IconCard className="h-5 w-5" />
+        </span>
         <div className="flex-1">
-          <p className="text-xs font-medium uppercase tracking-wider text-ink/40">Current plan</p>
-          <p className="mt-0.5 text-lg font-semibold capitalize">{currentPlan}</p>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-ink-muted/70">
+            Current plan
+          </p>
+          <p className="mt-0.5 text-lg font-semibold capitalize text-ink">{currentPlan}</p>
           {data.sub?.currentPeriodEnd && (
-            <p className="text-xs text-ink/40">
+            <p className="text-xs text-ink-muted">
               Renews{" "}
               {new Date(data.sub.currentPeriodEnd).toLocaleDateString("en-US", {
                 month: "long",
@@ -131,19 +141,19 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
           <button
             onClick={() => void openPortal()}
             disabled={busy === "portal"}
-            className="rounded-lg border border-ink/15 px-4 py-2 text-sm font-medium hover:bg-ink/5 disabled:opacity-60"
+            className="rounded-xl border border-line/15 bg-line/[0.03] px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-line/10 disabled:opacity-60"
           >
             {busy === "portal" ? "Opening…" : "Manage subscription"}
           </button>
         )}
-      </div>
+      </Panel>
 
       {/* Plan cards */}
       <motion.div
         variants={staggerParent}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-3 gap-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
       >
         {PLANS.map((plan) => {
           const isCurrent = plan.id === currentPlan;
@@ -153,34 +163,36 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
               variants={fadeUp}
               whileHover={isCurrent ? undefined : { y: -4 }}
               transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              className={`rounded-xl border p-5 ${
-                isCurrent ? "border-brand bg-brand/[0.03]" : "border-ink/10"
+              className={`relative overflow-hidden rounded-2xl border p-5 panel-hairline ${
+                isCurrent
+                  ? "border-brand/40 bg-brand/[0.07]"
+                  : plan.popular
+                    ? "border-brand/25 bg-surface/60"
+                    : "border-line/10 bg-surface/60"
               }`}
             >
+              {plan.popular && !isCurrent && (
+                <span className="absolute right-3 top-3 rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand-bright">
+                  Popular
+                </span>
+              )}
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold">{plan.label}</p>
-                  <p className="text-2xl font-bold tabular-nums mt-1">{plan.price}</p>
+                  <p className="font-semibold text-ink">{plan.label}</p>
+                  <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-ink">{plan.price}</p>
                 </div>
                 {isCurrent && (
-                  <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-dark">
+                  <span className="rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand-bright">
                     Current
                   </span>
                 )}
               </div>
-              <ul className="mt-4 space-y-1.5 text-sm text-ink/70">
+              <ul className="mt-4 space-y-2 text-sm text-ink-muted">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <svg
-                      className="h-4 w-4 shrink-0 text-brand"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      aria-hidden="true"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
-                    </svg>
+                    <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-brand/15 text-brand-bright">
+                      <IconCheck className="h-2.5 w-2.5" />
+                    </span>
                     {f}
                   </li>
                 ))}
@@ -191,15 +203,13 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
                   disabled={busy === plan.priceEnvKey}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="mt-4 w-full rounded-lg bg-brand py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+                  className="mt-5 w-full rounded-xl bg-brand py-2 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright disabled:opacity-60"
                 >
                   {busy === plan.priceEnvKey ? "Redirecting…" : `Upgrade to ${plan.label}`}
                 </motion.button>
               )}
               {plan.id === "starter" && !isCurrent && (
-                <p className="mt-4 text-xs text-ink/40 text-center">
-                  Downgrade via billing portal
-                </p>
+                <p className="mt-5 text-center text-xs text-ink-muted/70">Downgrade via billing portal</p>
               )}
             </motion.div>
           );

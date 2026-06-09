@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
+import { Panel, StatTile } from "../../../components/ui";
+import { IconServer, IconDollar, IconSliders } from "../../../components/icons";
 
 interface Resource {
   id: string;
@@ -36,13 +38,13 @@ function FilterPill({
     <button
       onClick={onClick}
       className={`relative rounded-full px-3 py-1 capitalize transition-colors duration-150 ${
-        active ? "text-white" : "text-ink/70 hover:bg-ink/10"
+        active ? "text-canvas" : "bg-line/[0.04] text-ink-muted hover:bg-line/10 hover:text-ink"
       }`}
     >
       {active && (
         <motion.span
           layoutId="resource-filter-pill"
-          className="absolute inset-0 rounded-full bg-ink"
+          className="absolute inset-0 rounded-full bg-brand"
           transition={{ type: "spring", stiffness: 500, damping: 38 }}
         />
       )}
@@ -77,10 +79,10 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
   const shown = filter === "all" ? resources : resources.filter((r) => r.resourceType === filter);
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <div className="max-w-5xl space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Resources</h1>
-        <p className="mt-1 text-sm text-ink/60">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Resources</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
           Inventory from your most recent scan, with estimated monthly cost.
         </p>
       </div>
@@ -89,27 +91,29 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
         variants={staggerParent}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
       >
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
-          <div className="text-xs uppercase tracking-wider text-ink/40">Total resources</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">
-            <AnimatedNumber value={resources.length} />
-          </div>
+        <motion.div variants={fadeUp}>
+          <StatTile
+            label="Total resources"
+            icon={<IconServer className="h-4 w-4" />}
+            value={<AnimatedNumber value={resources.length} />}
+          />
         </motion.div>
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
-          <div className="text-xs uppercase tracking-wider text-brand-dark/70">
-            Est. monthly cost
-          </div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums text-brand-dark">
-            <AnimatedNumber value={totalCost} format={usd} />
-          </div>
+        <motion.div variants={fadeUp}>
+          <StatTile
+            hero
+            label="Est. monthly cost"
+            icon={<IconDollar className="h-4 w-4" />}
+            value={<AnimatedNumber value={totalCost} format={usd} />}
+          />
         </motion.div>
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
-          <div className="text-xs uppercase tracking-wider text-ink/40">Types</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">
-            <AnimatedNumber value={Object.keys(byType).length} />
-          </div>
+        <motion.div variants={fadeUp}>
+          <StatTile
+            label="Types"
+            icon={<IconSliders className="h-4 w-4" />}
+            value={<AnimatedNumber value={Object.keys(byType).length} />}
+          />
         </motion.div>
       </motion.div>
 
@@ -127,22 +131,22 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
       )}
 
       {loaded && resources.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-ink/15 bg-ink/[0.02] px-4 py-3 text-sm text-ink/60">
+        <Panel className="px-4 py-3.5 text-sm text-ink-muted">
           No resources yet.{" "}
-          <a className="font-medium text-brand-dark hover:underline" href="/scans">
+          <a className="font-medium text-brand-bright hover:underline" href="/scans">
             Run a scan
           </a>{" "}
           to populate your inventory.
-        </p>
+        </Panel>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-ink/10">
+        <Panel className="overflow-hidden">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-ink/10 bg-ink/[0.02] text-left text-xs uppercase tracking-wider text-ink/40">
-                <th className="px-4 py-2.5 font-medium">Type</th>
-                <th className="px-4 py-2.5 font-medium">Resource</th>
-                <th className="px-4 py-2.5 font-medium">Region</th>
-                <th className="px-4 py-2.5 text-right font-medium">Monthly cost</th>
+              <tr className="border-b border-line/10 bg-surface-raised/40 text-left">
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Type</th>
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Resource</th>
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Region</th>
+                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Monthly cost</th>
               </tr>
             </thead>
             <tbody>
@@ -152,19 +156,19 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: Math.min(i * 0.025, 0.4), ease: [0.16, 1, 0.3, 1] }}
-                  className="border-b border-ink/5 last:border-0 hover:bg-ink/[0.015]"
+                  className="border-b border-line/5 last:border-0 hover:bg-line/[0.03]"
                 >
-                  <td className="px-4 py-3 capitalize text-ink/80">{label(r.resourceType)}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-ink/70">{r.resourceId}</td>
-                  <td className="px-4 py-3 text-ink/60">{r.region}</td>
-                  <td className="px-4 py-3 text-right font-medium tabular-nums">
+                  <td className="px-4 py-3 capitalize text-ink">{label(r.resourceType)}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-ink-muted">{r.resourceId}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.region}</td>
+                  <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-ink">
                     {usd(r.estimatedMonthlyCost ?? 0)}
                   </td>
                 </motion.tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </Panel>
       )}
     </div>
   );

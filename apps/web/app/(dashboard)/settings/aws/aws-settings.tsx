@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Panel, Eyebrow, btnPrimary } from "../../../../components/ui";
+import { IconCloud, IconShield, IconCheck } from "../../../../components/icons";
 
 interface Account {
   id: string;
@@ -15,6 +17,11 @@ interface InitResult {
   roleName: string;
   cloudleakAccountId: string;
 }
+
+const STATUS_STYLES: Record<string, string> = {
+  connected: "text-brand-bright",
+  error: "text-rose-300",
+};
 
 export function AwsSettings({ organizationId }: { organizationId: string }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -68,89 +75,105 @@ export function AwsSettings({ organizationId }: { organizationId: string }) {
     setBusy(false);
   }
 
+  const inputCls =
+    "w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25";
+
   return (
-    <div className="max-w-2xl space-y-8">
+    <div className="max-w-2xl space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold">AWS accounts</h1>
-        <p className="mt-1 text-sm text-ink/60">
-          Connect an account with a read-only cross-account role. CloudLeak never asks for
-          access keys.
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">AWS accounts</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          Connect an account with a read-only cross-account role. CloudLeak never asks for access
+          keys.
+        </p>
+      </div>
+
+      {/* Security note */}
+      <div className="flex items-start gap-3 rounded-xl border border-brand/20 bg-brand/[0.05] px-4 py-3.5">
+        <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand/15 text-brand-bright">
+          <IconShield className="h-4 w-4" />
+        </span>
+        <p className="text-sm leading-relaxed text-ink-muted">
+          We use a scoped, read-only cross-account IAM role with a unique external ID. CloudLeak can
+          describe and list resources. It can never modify or delete anything.
         </p>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/50">
-          Connected
-        </h2>
+        <Eyebrow>Connected</Eyebrow>
         {accounts.length === 0 ? (
-          <p className="text-sm text-ink/50">No accounts yet.</p>
+          <p className="text-sm text-ink-muted">No accounts yet.</p>
         ) : (
-          <ul className="divide-y divide-ink/10 rounded-lg border border-ink/10">
+          <Panel className="divide-y divide-line/8 overflow-hidden">
             {accounts.map((a) => (
-              <li key={a.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span>{a.accountId ?? "Pending account"}</span>
+              <div key={a.id} className="flex items-center justify-between px-4 py-3.5 text-sm">
+                <span className="flex items-center gap-3 text-ink">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-line/8 text-ink-muted">
+                    <IconCloud className="h-4 w-4" />
+                  </span>
+                  <span className="font-mono">{a.accountId ?? "Pending account"}</span>
+                </span>
                 <span
-                  className={
-                    a.status === "connected"
-                      ? "text-brand-dark"
-                      : a.status === "error"
-                        ? "text-red-600"
-                        : "text-ink/50"
-                  }
+                  className={`inline-flex items-center gap-1.5 font-medium capitalize ${
+                    STATUS_STYLES[a.status] ?? "text-ink-muted"
+                  }`}
                 >
+                  {a.status === "connected" && <IconCheck className="h-3.5 w-3.5" />}
                   {a.status}
                 </span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </Panel>
         )}
       </section>
 
       {!init ? (
-        <button
-          onClick={startConnect}
-          disabled={busy}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
-        >
+        <button onClick={startConnect} disabled={busy} className={btnPrimary}>
+          <IconCloud className="h-4 w-4" />
           {busy ? "Preparing…" : "Connect AWS"}
         </button>
       ) : (
-        <section className="space-y-4 rounded-lg border border-ink/10 p-4">
+        <Panel className="space-y-5 p-5">
           <div>
-            <h2 className="text-sm font-semibold">1. Apply this Terraform</h2>
-            <p className="text-xs text-ink/50">
-              External ID: <code className="font-mono">{init.account.externalId}</code>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <span className="grid h-5 w-5 place-items-center rounded-md bg-brand/15 font-mono text-[11px] text-brand-bright">1</span>
+              Apply this Terraform
+            </h2>
+            <p className="mt-2 text-xs text-ink-muted">
+              External ID:{" "}
+              <code className="rounded bg-line/10 px-1.5 py-0.5 font-mono text-brand-bright">
+                {init.account.externalId}
+              </code>
             </p>
-            <pre className="mt-2 max-h-72 overflow-auto rounded bg-ink p-3 text-xs text-white">
+            <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-line/10 bg-canvas/80 p-4 font-mono text-xs leading-relaxed text-brand-bright">
               {init.terraform}
             </pre>
           </div>
           <form onSubmit={validate} className="space-y-3">
-            <h2 className="text-sm font-semibold">2. Paste the results</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <span className="grid h-5 w-5 place-items-center rounded-md bg-brand/15 font-mono text-[11px] text-brand-bright">2</span>
+              Paste the results
+            </h2>
             <input
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               placeholder="12-digit AWS account id"
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm"
+              className={inputCls}
             />
             <input
               value={roleArn}
               onChange={(e) => setRoleArn(e.target.value)}
               placeholder="arn:aws:iam::123456789012:role/CloudLeakReadOnly"
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm"
+              className={inputCls}
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={busy}
-              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
-            >
+            {error && <p className="text-sm text-rose-300">{error}</p>}
+            <button type="submit" disabled={busy} className={btnPrimary}>
               {busy ? "Validating…" : "Validate connection"}
             </button>
           </form>
-        </section>
+        </Panel>
       )}
-      {error && !init && <p className="text-sm text-red-600">{error}</p>}
+      {error && !init && <p className="text-sm text-rose-300">{error}</p>}
     </div>
   );
 }

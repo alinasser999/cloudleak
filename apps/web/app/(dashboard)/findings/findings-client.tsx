@@ -2,6 +2,14 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
+import { Panel, StatTile, Eyebrow, sev } from "../../../components/ui";
+import {
+  IconAlert,
+  IconDollar,
+  IconCopy,
+  IconCheck,
+  IconArrowRight,
+} from "../../../components/icons";
 
 interface Finding {
   id: string;
@@ -21,28 +29,13 @@ const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits
 
 const SEVERITY_ORDER = ["critical", "high", "medium", "low"] as const;
 
-const SEVERITY_BADGE: Record<string, string> = {
-  critical: "bg-red-50 text-red-700 ring-red-200",
-  high: "bg-amber-50 text-amber-700 ring-amber-200",
-  medium: "bg-yellow-50 text-yellow-700 ring-yellow-200",
-  low: "bg-sky-50 text-sky-700 ring-sky-200",
-};
-
-const SEVERITY_DOT: Record<string, string> = {
-  critical: "bg-red-500",
-  high: "bg-amber-500",
-  medium: "bg-yellow-500",
-  low: "bg-sky-500",
-};
-
 function SeverityBadge({ severity }: { severity: string }) {
+  const s = sev(severity);
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${
-        SEVERITY_BADGE[severity] ?? "bg-ink/5 text-ink/60 ring-ink/10"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${s.chip}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[severity] ?? "bg-ink/40"}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
       {severity}
     </span>
   );
@@ -63,20 +56,22 @@ function RemediationPanel({ finding }: { finding: Finding }) {
   if (!finding.terraformFix) {
     return (
       <div className="px-4 py-4">
-        <p className="text-sm text-ink/40">No remediation available.</p>
+        <p className="text-sm text-ink-muted">No remediation available.</p>
       </div>
     );
   }
 
   return (
     <div className="px-4 py-4">
-      <div className="mb-3 flex gap-1">
+      <div className="mb-3 flex gap-1.5">
         {(["terraform", "manual"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-              tab === t ? "bg-ink text-white" : "bg-ink/10 text-ink/60 hover:bg-ink/15"
+            className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+              tab === t
+                ? "bg-brand text-canvas"
+                : "bg-line/8 text-ink-muted hover:bg-line/15 hover:text-ink"
             }`}
           >
             {t === "terraform" ? "Terraform" : "Manual steps"}
@@ -86,14 +81,15 @@ function RemediationPanel({ finding }: { finding: Finding }) {
 
       {tab === "terraform" ? (
         <div className="relative">
-          <pre className="max-h-64 overflow-y-auto overflow-x-auto whitespace-pre rounded-lg bg-[#0d1117] p-4 font-mono text-xs leading-relaxed text-emerald-300">
+          <pre className="max-h-64 overflow-auto whitespace-pre rounded-xl border border-line/10 bg-canvas/80 p-4 font-mono text-xs leading-relaxed text-brand-bright">
             {finding.terraformFix}
           </pre>
           <button
             onClick={copy}
-            className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-xs font-medium text-ink/50 transition hover:bg-white/20"
+            className="absolute right-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-lg border border-line/15 bg-surface/80 px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:text-ink"
           >
-            {copied ? "Copied!" : "Copy"}
+            {copied ? <IconCheck className="h-3.5 w-3.5 text-brand-bright" /> : <IconCopy className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy"}
           </button>
         </div>
       ) : (
@@ -102,7 +98,7 @@ function RemediationPanel({ finding }: { finding: Finding }) {
             .split("\n")
             .filter(Boolean)
             .map((step, i) => (
-              <p key={i} className="text-sm text-ink/80">
+              <p key={i} className="text-sm text-ink-muted">
                 {step}
               </p>
             ))}
@@ -125,13 +121,13 @@ function FilterPill({
     <button
       onClick={onClick}
       className={`relative rounded-full px-3 py-1 capitalize transition-colors duration-150 ${
-        active ? "text-white" : "bg-ink/5 text-ink/70 hover:bg-ink/10"
+        active ? "text-canvas" : "bg-line/[0.04] text-ink-muted hover:bg-line/10 hover:text-ink"
       }`}
     >
       {active && (
         <motion.span
           layoutId="findings-filter-pill"
-          className="absolute inset-0 rounded-full bg-ink"
+          className="absolute inset-0 rounded-full bg-brand"
           transition={{ type: "spring", stiffness: 500, damping: 38 }}
         />
       )}
@@ -205,10 +201,10 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
   }
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <div className="max-w-5xl space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Findings</h1>
-        <p className="mt-1 text-sm text-ink/60">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Findings</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
           Waste detected from your most recent scan. Dismiss findings you&apos;ve intentionally
           accepted.
         </p>
@@ -219,35 +215,36 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
         variants={staggerParent}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
       >
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
-          <div className="text-xs uppercase tracking-wider text-ink/40">Open findings</div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums">
-            <AnimatedNumber value={openFindings.length} />
-          </div>
+        <motion.div variants={fadeUp}>
+          <StatTile
+            label="Open findings"
+            icon={<IconAlert className="h-4 w-4" />}
+            value={<AnimatedNumber value={openFindings.length} />}
+          />
         </motion.div>
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 bg-brand/[0.04] p-4">
-          <div className="text-xs uppercase tracking-wider text-brand-dark/70">
-            Est. monthly savings
-          </div>
-          <div className="mt-1 text-3xl font-semibold tabular-nums text-brand-dark">
-            <AnimatedNumber value={totalSavings} format={usd} />
-          </div>
+        <motion.div variants={fadeUp}>
+          <StatTile
+            hero
+            label="Est. monthly savings"
+            icon={<IconDollar className="h-4 w-4" />}
+            value={<AnimatedNumber value={totalSavings} format={usd} />}
+          />
         </motion.div>
-        <motion.div variants={fadeUp} className="rounded-xl border border-ink/10 p-4">
-          <div className="text-xs uppercase tracking-wider text-ink/40">By severity</div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+        <motion.div variants={fadeUp} className="rounded-2xl border border-line/10 bg-surface/60 p-4 panel-hairline">
+          <Eyebrow>By severity</Eyebrow>
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {SEVERITY_ORDER.filter((s) => countBySeverity[s]).map((s) => (
               <span
                 key={s}
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${SEVERITY_BADGE[s]}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${sev(s).chip}`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[s]}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${sev(s).dot}`} />
                 {countBySeverity[s]} {s}
               </span>
             ))}
-            {openFindings.length === 0 && <span className="text-sm text-ink/40">—</span>}
+            {openFindings.length === 0 && <span className="text-sm text-ink-muted">—</span>}
           </div>
         </motion.div>
       </motion.div>
@@ -260,11 +257,7 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
               All ({openFindings.length})
             </FilterPill>
             {activeSeverities.map((s) => (
-              <FilterPill
-                key={s}
-                active={severityFilter === s}
-                onClick={() => setSeverityFilter(s)}
-              >
+              <FilterPill key={s} active={severityFilter === s} onClick={() => setSeverityFilter(s)}>
                 {s} ({countBySeverity[s] ?? 0})
               </FilterPill>
             ))}
@@ -273,12 +266,10 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
             <button
               onClick={() => setShowDismissed((v) => !v)}
               className={`ml-auto rounded-full px-3 py-1 text-xs transition ${
-                showDismissed ? "bg-ink/10 text-ink/70" : "text-ink/40 hover:text-ink/60"
+                showDismissed ? "bg-line/10 text-ink" : "text-ink-muted hover:text-ink"
               }`}
             >
-              {showDismissed
-                ? "Hide dismissed"
-                : `Show dismissed (${dismissedFindings.length})`}
+              {showDismissed ? "Hide dismissed" : `Show dismissed (${dismissedFindings.length})`}
             </button>
           )}
         </div>
@@ -286,27 +277,27 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
 
       {/* Content */}
       {!loaded ? (
-        <p className="text-sm text-ink/40">Loading…</p>
+        <p className="text-sm text-ink-muted">Loading…</p>
       ) : openFindings.length === 0 && !showDismissed ? (
-        <p className="rounded-lg border border-dashed border-ink/15 bg-ink/[0.02] px-4 py-3 text-sm text-ink/60">
+        <Panel className="px-4 py-3.5 text-sm text-ink-muted">
           No findings.{" "}
-          <a className="font-medium text-brand-dark hover:underline" href="/scans">
+          <a className="font-medium text-brand-bright hover:underline" href="/scans">
             Run a scan
           </a>{" "}
           on the Scans page to detect waste.
-        </p>
+        </Panel>
       ) : shown.length === 0 ? (
-        <p className="text-sm text-ink/50">No findings match the current filter.</p>
+        <p className="text-sm text-ink-muted">No findings match the current filter.</p>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-ink/10">
+        <Panel className="overflow-hidden">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-ink/10 bg-ink/[0.02] text-left text-xs uppercase tracking-wider text-ink/40">
-                <th className="px-4 py-2.5 font-medium">Severity</th>
-                <th className="px-4 py-2.5 font-medium">Finding</th>
-                <th className="px-4 py-2.5 font-medium">Resource</th>
-                <th className="px-4 py-2.5 text-right font-medium">Savings/mo</th>
-                <th className="px-4 py-2.5 font-medium" />
+              <tr className="border-b border-line/10 bg-surface-raised/40 text-left">
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Severity</th>
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Finding</th>
+                <th className="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Resource</th>
+                <th className="px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted/70">Savings/mo</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -317,7 +308,7 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                 return (
                   <Fragment key={f.id}>
                     <tr
-                      className={`border-b border-ink/5 transition-colors last:border-b-0 hover:bg-ink/[0.015] ${
+                      className={`border-b border-line/5 transition-colors last:border-b-0 hover:bg-line/[0.03] ${
                         isDismissed ? "opacity-40" : ""
                       }`}
                     >
@@ -325,17 +316,15 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                         <SeverityBadge severity={f.severity} />
                       </td>
                       <td className="max-w-xs px-4 py-3">
-                        <div className="font-medium text-ink/90">{f.title}</div>
+                        <div className="font-medium text-ink">{f.title}</div>
                         {f.description && (
-                          <div className="mt-0.5 line-clamp-1 text-xs text-ink/50">
-                            {f.description}
-                          </div>
+                          <div className="mt-0.5 line-clamp-1 text-xs text-ink-muted">{f.description}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-ink/60">
+                      <td className="px-4 py-3 font-mono text-xs text-ink-muted">
                         {f.resourceId ? f.resourceId.slice(0, 8) + "…" : "—"}
                       </td>
-                      <td className="px-4 py-3 text-right font-medium tabular-nums text-brand-dark">
+                      <td className="px-4 py-3 text-right font-mono font-semibold tabular-nums text-brand-bright">
                         {f.estimatedMonthlySavings != null ? usd(f.estimatedMonthlySavings) : "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -343,19 +332,20 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                           {!isDismissed && (
                             <button
                               onClick={() => toggleFix(f.id)}
-                              className={`rounded px-2.5 py-1 text-xs font-medium ring-1 transition ${
+                              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 transition ${
                                 isExpanded
-                                  ? "bg-ink text-white ring-ink"
-                                  : "text-ink/60 ring-ink/20 hover:text-ink/80 hover:ring-ink/40"
+                                  ? "bg-brand text-canvas ring-brand"
+                                  : "text-ink-muted ring-line/20 hover:text-ink hover:ring-line/40"
                               }`}
                             >
-                              {isExpanded ? "Close" : "Fix →"}
+                              {isExpanded ? "Close" : "Fix"}
+                              {!isExpanded && <IconArrowRight className="h-3 w-3" />}
                             </button>
                           )}
                           <button
                             onClick={() => void setStatus(f.id, isDismissed ? "open" : "dismissed")}
                             disabled={isBusy}
-                            className="rounded px-2.5 py-1 text-xs font-medium text-ink/50 transition hover:bg-ink/5 hover:text-ink/80 disabled:opacity-40"
+                            className="rounded-lg px-2.5 py-1 text-xs font-medium text-ink-muted transition hover:bg-line/8 hover:text-ink disabled:opacity-40"
                           >
                             {isBusy ? "…" : isDismissed ? "Reopen" : "Dismiss"}
                           </button>
@@ -364,14 +354,14 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
                     </tr>
                     <AnimatePresence initial={false}>
                       {isExpanded && (
-                        <tr className="bg-ink/[0.02]">
+                        <tr className="bg-canvas/30">
                           <td colSpan={5} className="p-0">
                             <motion.div
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                              className="overflow-hidden border-b border-ink/5"
+                              className="overflow-hidden border-b border-line/5"
                             >
                               <RemediationPanel finding={f} />
                             </motion.div>
@@ -384,7 +374,7 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
               })}
             </tbody>
           </table>
-        </div>
+        </Panel>
       )}
     </div>
   );

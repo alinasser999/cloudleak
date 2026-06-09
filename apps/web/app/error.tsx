@@ -15,29 +15,29 @@ export default function Error({
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <p className="text-xs font-semibold uppercase tracking-widest text-ink/30">Error</p>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-300/80">Error</p>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
         Something went wrong
       </h1>
-      <p className="mt-2 max-w-sm text-sm text-ink/55">
+      <p className="mt-2 max-w-sm text-sm text-ink-muted">
         An unexpected error occurred. Try again, and if it keeps happening, contact support.
       </p>
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-7 flex items-center gap-3">
         <button
           onClick={reset}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-dark"
+          className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright"
         >
           Try again
         </button>
         <a
           href="/overview"
-          className="rounded-lg border border-ink/15 px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:bg-ink/5"
+          className="rounded-xl border border-line/15 bg-line/[0.03] px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-line/10"
         >
           Back to dashboard
         </a>
       </div>
       {error.digest && (
-        <p className="mt-6 font-mono text-[11px] text-ink/30">ref: {error.digest}</p>
+        <p className="mt-6 font-mono text-[11px] text-ink-faint">ref: {error.digest}</p>
       )}
     </div>
   );

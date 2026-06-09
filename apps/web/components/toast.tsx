@@ -37,23 +37,23 @@ const VARIANT_STYLES: Record<ToastVariant, { bar: string; icon: ReactNode }> = {
   success: {
     bar: "bg-brand",
     icon: (
-      <svg className="h-4 w-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="h-4 w-4 text-brand-bright" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
       </svg>
     ),
   },
   error: {
-    bar: "bg-red-500",
+    bar: "bg-rose-400",
     icon: (
-      <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="h-4 w-4 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
       </svg>
     ),
   },
   info: {
-    bar: "bg-ink/40",
+    bar: "bg-ink-faint",
     icon: (
-      <svg className="h-4 w-4 text-ink/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="h-4 w-4 text-ink-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25h.75v4.5m-.75 0h1.5M12 8.25h.008M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
       </svg>
     ),
@@ -105,15 +105,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 24, scale: 0.96 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="pointer-events-auto flex items-start gap-3 overflow-hidden rounded-xl border border-ink/10 bg-white p-3.5 shadow-lg shadow-ink/5"
+                className="pointer-events-auto flex items-start gap-3 overflow-hidden rounded-xl border border-line/12 bg-surface/95 p-3.5 shadow-xl shadow-canvas/60 backdrop-blur-xl"
               >
                 <span className={`mt-0.5 h-4 w-1 shrink-0 rounded-full ${style.bar}`} />
                 <span className="mt-0.5 shrink-0">{style.icon}</span>
-                <p className="flex-1 text-sm text-ink/80">{t.message}</p>
+                <p className="flex-1 text-sm text-ink">{t.message}</p>
                 <button
                   onClick={() => dismiss(t.id)}
                   aria-label="Dismiss notification"
-                  className="shrink-0 rounded p-0.5 text-ink/30 transition-colors hover:text-ink/60"
+                  className="shrink-0 rounded p-0.5 text-ink-faint transition-colors hover:text-ink"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />

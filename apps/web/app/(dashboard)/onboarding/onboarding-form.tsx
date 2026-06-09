@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { btnPrimary } from "../../../components/ui";
+import { IconArrowRight } from "../../../components/icons";
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -28,24 +30,21 @@ export function OnboardingForm() {
   }
 
   return (
-    <form onSubmit={submit} className="max-w-sm space-y-4">
+    <form onSubmit={submit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium">Organization name</label>
+        <label className="block text-sm font-medium text-ink">Organization name</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Acme Inc."
-          className="mt-1 w-full rounded-lg border border-ink/15 px-3 py-2 text-sm"
+          className="mt-1.5 w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
           autoFocus
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={busy || name.trim().length < 2}
-        className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
-      >
+      {error && <p className="text-sm text-rose-300">{error}</p>}
+      <button type="submit" disabled={busy || name.trim().length < 2} className={btnPrimary + " w-full"}>
         {busy ? "Creating…" : "Create organization"}
+        {!busy && <IconArrowRight className="h-4 w-4" />}
       </button>
     </form>
   );

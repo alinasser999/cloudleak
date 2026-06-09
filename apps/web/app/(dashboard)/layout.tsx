@@ -6,10 +6,11 @@ const NAV = [
   { href: "/scans", label: "Scans" },
   { href: "/resources", label: "Resources" },
   { href: "/findings", label: "Findings" },
+  { href: "/reports", label: "Reports" },
   { href: "/settings/aws", label: "Settings" },
 ];
 
-const COMING_SOON = ["Reports"];
+const COMING_SOON: string[] = [];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

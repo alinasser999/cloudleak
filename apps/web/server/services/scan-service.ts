@@ -1,35 +1,17 @@
 import {
   createUserClient,
   AwsAccountRepository,
-  FindingRepository,
   MembershipRepository,
-  ResourceRepository,
   ScanRepository,
   type Db,
 } from "@cloudleak/db";
 import { ForbiddenError, ValidationError, type Scan } from "@cloudleak/core";
-import { runScan } from "@cloudleak/collectors";
-import { runDetection } from "@cloudleak/rules";
-import {
-  FakeAwsInventoryClient,
-  RealAwsInventoryClient,
-  RealAwsClientFactory,
-  type AwsInventoryClient,
-} from "@cloudleak/aws";
 
 export class ScanService {
-  constructor(
-    private readonly accessToken: string,
-    private readonly clientOverride?: AwsInventoryClient,
-  ) {}
+  constructor(private readonly accessToken: string) {}
 
   private db(): Db {
     return createUserClient(this.accessToken);
-  }
-
-  private regions(): string[] {
-    const raw = process.env.CLOUDLEAK_SCAN_REGIONS ?? "us-east-1";
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
   }
 
   private async assertAdmin(userId: string, organizationId: string): Promise<void> {
@@ -44,17 +26,6 @@ export class ScanService {
     if (!m) throw new ForbiddenError("Not a member of this organization");
   }
 
-  private async buildClient(roleArn: string, externalId: string): Promise<AwsInventoryClient> {
-    if (this.clientOverride) return this.clientOverride;
-    if (process.env.CLOUDLEAK_FAKE_AWS === "1") return FakeAwsInventoryClient.demo();
-    const creds = await new RealAwsClientFactory().assumeRole({
-      roleArn,
-      externalId,
-      region: this.regions()[0] ?? "us-east-1",
-    });
-    return new RealAwsInventoryClient(creds);
-  }
-
   async run(userId: string, organizationId: string, awsAccountId: string): Promise<Scan> {
     await this.assertAdmin(userId, organizationId);
     const db = this.db();
@@ -62,24 +33,7 @@ export class ScanService {
     if (acct.status !== "connected" || !acct.roleArn) {
       throw new ValidationError("AWS account is not connected");
     }
-    const client = await this.buildClient(acct.roleArn, acct.externalId);
-    const scan = await runScan({
-      awsAccount: { id: acct.id, organizationId },
-      regions: this.regions(),
-      client,
-      resourceRepo: new ResourceRepository(db),
-      scanRepo: new ScanRepository(db),
-    });
-    try {
-      await runDetection({
-        awsAccount: { id: acct.id, organizationId },
-        resourceRepo: new ResourceRepository(db),
-        findingRepo: new FindingRepository(db),
-      });
-    } catch (e) {
-      console.error("Detection failed (non-fatal):", e);
-    }
-    return scan;
+    return new ScanRepository(db).createQueued(organizationId, awsAccountId);
   }
 
   async list(userId: string, organizationId: string): Promise<Scan[]> {

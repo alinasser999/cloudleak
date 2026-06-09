@@ -27,9 +27,10 @@ const totalCount = (s: ScanStats) =>
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
+    queued: "bg-ink/5 text-ink/60 ring-ink/15",
+    running: "bg-amber-50 text-amber-700 ring-amber-200",
     success: "bg-brand/10 text-brand-dark ring-brand/20",
     error: "bg-red-50 text-red-600 ring-red-200",
-    running: "bg-amber-50 text-amber-700 ring-amber-200",
   };
   return (
     <span
@@ -61,6 +62,14 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Auto-refresh every 3s while any scan is queued or running
+  useEffect(() => {
+    const active = scans.some((s) => s.status === "queued" || s.status === "running");
+    if (!active) return;
+    const id = setInterval(() => void refresh(), 3000);
+    return () => clearInterval(id);
+  }, [scans, refresh]);
 
   const connected = accounts.filter((a) => a.status === "connected");
 
@@ -109,7 +118,7 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
               <span
                 className={`h-1.5 w-1.5 rounded-full bg-white ${busy ? "animate-pulse" : ""}`}
               />
-              {busy ? "Scanning…" : `Run scan · ${a.accountId ?? a.id.slice(0, 8)}`}
+              {busy ? "Queuing…" : `Run scan · ${a.accountId ?? a.id.slice(0, 8)}`}
             </button>
           ))}
         </div>

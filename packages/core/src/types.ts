@@ -53,7 +53,7 @@ export type ResourceType =
   | "rds_instance"
   | "load_balancer";
 
-export type ScanStatus = "running" | "success" | "error";
+export type ScanStatus = "queued" | "running" | "success" | "error";
 
 /** What a collector emits, before persistence. */
 export interface NormalizedResource {

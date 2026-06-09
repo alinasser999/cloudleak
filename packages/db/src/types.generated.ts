@@ -400,6 +400,54 @@ export type Database = {
           },
         ]
       }
+      scan_schedules: {
+        Row: {
+          id: string
+          organization_id: string
+          aws_account_id: string
+          frequency: string
+          enabled: boolean
+          next_scan_at: string | null
+          last_scan_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          aws_account_id: string
+          frequency?: string
+          enabled?: boolean
+          next_scan_at?: string | null
+          last_scan_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          aws_account_id?: string
+          frequency?: string
+          enabled?: boolean
+          next_scan_at?: string | null
+          last_scan_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_schedules_aws_account_id_fkey"
+            columns: ["aws_account_id"]
+            isOneToOne: false
+            referencedRelation: "aws_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string

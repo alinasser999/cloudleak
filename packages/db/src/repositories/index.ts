@@ -6,3 +6,4 @@ export * from "./resource.js";
 export * from "./scan.js";
 export * from "./finding.js";
 export * from "./subscription.js";
+export * from "./schedule.js";

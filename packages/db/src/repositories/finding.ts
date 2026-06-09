@@ -19,6 +19,8 @@ type FindingRow = {
   title: string;
   description: string | null;
   status: string;
+  terraform_fix: string | null;
+  manual_fix: string | null;
   created_at: string;
 };
 
@@ -33,6 +35,8 @@ const map = (d: FindingRow): Finding => ({
   title: d.title,
   description: d.description,
   status: d.status as FindingStatus,
+  terraformFix: d.terraform_fix,
+  manualFix: d.manual_fix,
   createdAt: d.created_at,
 });
 
@@ -51,6 +55,8 @@ export class FindingRepository {
       title: r.title,
       description: r.description,
       status: r.status,
+      terraform_fix: r.terraformFix ?? null,
+      manual_fix: r.manualFix ?? null,
     }));
     const { error } = await this.db.from("findings").insert(payload);
     if (error) throw new Error(error.message);

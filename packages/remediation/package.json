@@ -1,5 +1,5 @@
 {
-  "name": "@cloudleak/rules",
+  "name": "@cloudleak/remediation",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,7 @@
     "lint": "echo ok"
   },
   "dependencies": {
-    "@cloudleak/core": "workspace:*",
-    "@cloudleak/remediation": "workspace:*"
+    "@cloudleak/core": "workspace:*"
   },
   "devDependencies": {
     "@cloudleak/config": "workspace:*",

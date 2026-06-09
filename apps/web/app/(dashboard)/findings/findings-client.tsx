@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 interface Finding {
   id: string;
@@ -11,6 +11,8 @@ interface Finding {
   title: string;
   description: string | null;
   status: string;
+  terraformFix: string | null;
+  manualFix: string | null;
 }
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -51,12 +53,77 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
+function RemediationPanel({ finding }: { finding: Finding }) {
+  const [tab, setTab] = useState<"terraform" | "manual">("terraform");
+  const [copied, setCopied] = useState(false);
+
+  function copy() {
+    if (!finding.terraformFix) return;
+    void navigator.clipboard.writeText(finding.terraformFix).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  if (!finding.terraformFix) {
+    return (
+      <div className="px-4 py-4">
+        <p className="text-sm text-ink/40">No remediation available.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-4">
+      <div className="mb-3 flex gap-1">
+        {(["terraform", "manual"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+              tab === t ? "bg-ink text-white" : "bg-ink/10 text-ink/60 hover:bg-ink/15"
+            }`}
+          >
+            {t === "terraform" ? "Terraform" : "Manual steps"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "terraform" ? (
+        <div className="relative">
+          <pre className="max-h-64 overflow-y-auto overflow-x-auto whitespace-pre rounded-lg bg-[#0d1117] p-4 font-mono text-xs leading-relaxed text-emerald-300">
+            {finding.terraformFix}
+          </pre>
+          <button
+            onClick={copy}
+            className="absolute right-2 top-2 rounded bg-white/10 px-2 py-0.5 text-xs font-medium text-ink/50 transition hover:bg-white/20"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-1.5 pl-1">
+          {(finding.manualFix ?? "")
+            .split("\n")
+            .filter(Boolean)
+            .map((step, i) => (
+              <p key={i} className="text-sm text-ink/80">
+                {step}
+              </p>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FindingsClient({ organizationId }: { organizationId: string }) {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [showDismissed, setShowDismissed] = useState(false);
   const [dismissing, setDismissing] = useState<Set<string>>(new Set());
+  const [expandedFixId, setExpandedFixId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/findings?organizationId=${organizationId}`);
@@ -67,6 +134,10 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  function toggleFix(id: string) {
+    setExpandedFixId((prev) => (prev === id ? null : id));
+  }
 
   const openFindings = useMemo(() => findings.filter((f) => f.status === "open"), [findings]);
   const dismissedFindings = useMemo(
@@ -94,6 +165,7 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
 
   async function setStatus(id: string, status: "dismissed" | "open") {
     setDismissing((prev) => new Set(prev).add(id));
+    if (expandedFixId === id) setExpandedFixId(null);
     const res = await fetch(`/api/findings/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -222,40 +294,63 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
               {shown.map((f) => {
                 const isDismissed = f.status === "dismissed";
                 const isBusy = dismissing.has(f.id);
+                const isExpanded = expandedFixId === f.id;
                 return (
-                  <tr
-                    key={f.id}
-                    className={`border-b border-l-2 border-ink/5 transition last:border-b-0 hover:bg-ink/[0.015] ${
-                      SEVERITY_BORDER[f.severity] ?? "border-l-ink/10"
-                    } ${isDismissed ? "opacity-40" : ""}`}
-                  >
-                    <td className="px-4 py-3">
-                      <SeverityBadge severity={f.severity} />
-                    </td>
-                    <td className="max-w-xs px-4 py-3">
-                      <div className="font-medium text-ink/90">{f.title}</div>
-                      {f.description && (
-                        <div className="mt-0.5 line-clamp-1 text-xs text-ink/50">
-                          {f.description}
+                  <Fragment key={f.id}>
+                    <tr
+                      className={`border-b border-l-2 border-ink/5 transition last:border-b-0 hover:bg-ink/[0.015] ${
+                        SEVERITY_BORDER[f.severity] ?? "border-l-ink/10"
+                      } ${isDismissed ? "opacity-40" : ""}`}
+                    >
+                      <td className="px-4 py-3">
+                        <SeverityBadge severity={f.severity} />
+                      </td>
+                      <td className="max-w-xs px-4 py-3">
+                        <div className="font-medium text-ink/90">{f.title}</div>
+                        {f.description && (
+                          <div className="mt-0.5 line-clamp-1 text-xs text-ink/50">
+                            {f.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-ink/60">
+                        {f.resourceId ? f.resourceId.slice(0, 8) + "…" : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium tabular-nums text-brand-dark">
+                        {f.estimatedMonthlySavings != null ? usd(f.estimatedMonthlySavings) : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {!isDismissed && (
+                            <button
+                              onClick={() => toggleFix(f.id)}
+                              className={`rounded px-2.5 py-1 text-xs font-medium ring-1 transition ${
+                                isExpanded
+                                  ? "bg-ink text-white ring-ink"
+                                  : "text-ink/60 ring-ink/20 hover:text-ink/80 hover:ring-ink/40"
+                              }`}
+                            >
+                              {isExpanded ? "Close" : "Fix →"}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => void setStatus(f.id, isDismissed ? "open" : "dismissed")}
+                            disabled={isBusy}
+                            className="rounded px-2.5 py-1 text-xs font-medium text-ink/50 transition hover:bg-ink/5 hover:text-ink/80 disabled:opacity-40"
+                          >
+                            {isBusy ? "…" : isDismissed ? "Reopen" : "Dismiss"}
+                          </button>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-ink/60">
-                      {f.resourceId ? f.resourceId.slice(0, 8) + "…" : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums text-brand-dark">
-                      {f.estimatedMonthlySavings != null ? usd(f.estimatedMonthlySavings) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => void setStatus(f.id, isDismissed ? "open" : "dismissed")}
-                        disabled={isBusy}
-                        className="rounded px-2.5 py-1 text-xs font-medium text-ink/50 transition hover:bg-ink/5 hover:text-ink/80 disabled:opacity-40"
-                      >
-                        {isBusy ? "…" : isDismissed ? "Reopen" : "Dismiss"}
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="border-b border-ink/5 bg-ink/[0.02]">
+                        <td colSpan={5}>
+                          <RemediationPanel finding={f} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

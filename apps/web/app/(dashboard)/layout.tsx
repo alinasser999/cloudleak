@@ -2,13 +2,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const NAV = [
+  { href: "/overview", label: "Overview" },
   { href: "/scans", label: "Scans" },
   { href: "/resources", label: "Resources" },
   { href: "/findings", label: "Findings" },
   { href: "/settings/aws", label: "Settings" },
 ];
 
-const COMING_SOON = ["Overview", "Reports"];
+const COMING_SOON = ["Reports"];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

@@ -114,6 +114,20 @@ export type FindingType =
 export type FindingSeverity = "low" | "medium" | "high" | "critical";
 export type FindingStatus = "open" | "dismissed";
 
+export interface DashboardSummary {
+  totalMonthlySavings: number;
+  openFindingsCount: number;
+  dismissedFindingsCount: number;
+  findingsBySeverity: Record<string, number>;
+  findingsByType: Record<string, number>;
+  resourceCount: number;
+  resourcesByType: Record<string, number>;
+  totalResourceCost: number;
+  lastScanAt: string | null;
+  recentScans: Scan[];
+  connectedAccountCount: number;
+}
+
 export interface NewFindingRow {
   organizationId: string;
   awsAccountId: string;

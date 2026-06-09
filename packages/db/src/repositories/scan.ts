@@ -43,6 +43,38 @@ export class ScanRepository {
     return map(data as ScanRow);
   }
 
+  async createQueued(organizationId: string, awsAccountId: string): Promise<Scan> {
+    const { data, error } = await this.db
+      .from("scans")
+      .insert({ organization_id: organizationId, aws_account_id: awsAccountId, status: "queued" })
+      .select()
+      .single();
+    if (error || !data) throw new Error(error?.message ?? "insert failed");
+    return map(data as ScanRow);
+  }
+
+  async claimScan(id: string): Promise<Scan | null> {
+    const { data } = await this.db
+      .from("scans")
+      .update({ status: "running", started_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("status", "queued")
+      .select()
+      .single();
+    return data ? map(data as ScanRow) : null;
+  }
+
+  async listQueued(): Promise<Scan[]> {
+    const { data, error } = await this.db
+      .from("scans")
+      .select()
+      .eq("status", "queued")
+      .order("created_at", { ascending: true })
+      .limit(10);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((d) => map(d as ScanRow));
+  }
+
   async update(
     id: string,
     patch: { status: ScanStatus; finishedAt: string; stats: ScanStats },

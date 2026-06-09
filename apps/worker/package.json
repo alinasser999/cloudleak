@@ -1,0 +1,24 @@
+{
+  "name": "@cloudleak/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo ok"
+  },
+  "dependencies": {
+    "@cloudleak/aws": "workspace:*",
+    "@cloudleak/collectors": "workspace:*",
+    "@cloudleak/core": "workspace:*",
+    "@cloudleak/db": "workspace:*",
+    "@cloudleak/rules": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudleak/config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

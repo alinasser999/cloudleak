@@ -103,3 +103,39 @@ export interface Scan {
   stats: ScanStats;
   createdAt: string;
 }
+
+export type FindingType =
+  | "stopped_ec2"
+  | "unattached_ebs"
+  | "old_snapshot"
+  | "unattached_eip"
+  | "stopped_rds";
+
+export type FindingSeverity = "low" | "medium" | "high" | "critical";
+export type FindingStatus = "open" | "dismissed";
+
+export interface NewFindingRow {
+  organizationId: string;
+  awsAccountId: string;
+  resourceId: string;
+  findingType: FindingType;
+  severity: FindingSeverity;
+  estimatedMonthlySavings: number;
+  title: string;
+  description: string;
+  status: FindingStatus;
+}
+
+export interface Finding {
+  id: string;
+  organizationId: string;
+  awsAccountId: string;
+  resourceId: string | null;
+  findingType: FindingType;
+  severity: FindingSeverity;
+  estimatedMonthlySavings: number | null;
+  title: string;
+  description: string | null;
+  status: FindingStatus;
+  createdAt: string;
+}

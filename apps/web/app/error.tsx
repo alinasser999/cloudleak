@@ -25,13 +25,13 @@ export default function Error({
       <div className="mt-7 flex items-center gap-3">
         <button
           onClick={reset}
-          className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright"
+          className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
         >
           Try again
         </button>
         <a
           href="/overview"
-          className="rounded-xl border border-line/15 bg-line/[0.03] px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-line/10"
+          className="rounded-xl border border-line/15 bg-line/[0.03] px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-line/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
         >
           Back to dashboard
         </a>

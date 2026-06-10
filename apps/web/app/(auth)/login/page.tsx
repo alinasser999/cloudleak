@@ -22,36 +22,47 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [showPw, setShowPw] = useState(false);
 
-  const signInOAuth = (provider: "google" | "github") =>
-    browserSupabase().auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${location.origin}/auth/callback` },
-    });
+  async function signInOAuth(provider: "google" | "github") {
+    setError(null);
+    try {
+      const { error } = await browserSupabase().auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${location.origin}/auth/callback` },
+      });
+      if (error) setError(error.message);
+    } catch {
+      setError("Could not start sign-in. Please try again.");
+    }
+  }
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const sb = browserSupabase();
-    const { error } =
-      mode === "signin"
-        ? await sb.auth.signInWithPassword({ email, password })
-        : await sb.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback` } });
-    if (error) {
-      setError(error.message);
+    try {
+      const sb = browserSupabase();
+      const { error } =
+        mode === "signin"
+          ? await sb.auth.signInWithPassword({ email, password })
+          : await sb.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/auth/callback` } });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      if (mode === "signup") {
+        setMode("signin");
+        setError("Check your email to confirm your account, then sign in.");
+        return;
+      }
+      router.push("/onboarding");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setBusy(false);
-      return;
     }
-    if (mode === "signup") {
-      setError(null);
-      setBusy(false);
-      setMode("signin");
-      setError("Check your email to confirm your account, then sign in.");
-      return;
-    }
-    router.push("/onboarding");
-    router.refresh();
   }
 
   return (
@@ -160,24 +171,49 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={(e) => void handleEmail(e)} className="space-y-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              className="w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
-              required
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
-              required
-            />
+            <div>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
+                required
+              />
+            </div>
+            <div className="relative">
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                type={showPw ? "text" : "password"}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 pr-16 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-medium text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+              >
+                {showPw ? "Hide" : "Show"}
+              </button>
+            </div>
             {error && (
-              <p className={`text-sm ${error.startsWith("Check") ? "text-brand-bright" : "text-rose-600"}`}>
+              <p
+                role="alert"
+                className={`text-sm ${error.startsWith("Check") ? "text-brand-bright" : "text-rose-600"}`}
+              >
                 {error}
               </p>
             )}

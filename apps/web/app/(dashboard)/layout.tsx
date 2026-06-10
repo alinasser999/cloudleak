@@ -14,6 +14,7 @@ import {
   IconCloud,
   IconClock,
   IconCard,
+  IconUsers,
   IconLeaf,
   IconMenu,
   IconX,
@@ -34,6 +35,7 @@ const NAV: NavItem[] = [
 const SETTINGS_NAV: NavItem[] = [
   { href: "/settings/aws", label: "AWS Accounts", icon: IconCloud },
   { href: "/settings/schedules", label: "Schedules", icon: IconClock },
+  { href: "/settings/members", label: "Team", icon: IconUsers },
   { href: "/settings/billing", label: "Billing", icon: IconCard },
 ];
 

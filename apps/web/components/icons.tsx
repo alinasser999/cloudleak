@@ -200,3 +200,11 @@ export const IconInfo = (p: IconProps) => (
     <path d="M12 16v-4M12 8h.01" />
   </Svg>
 );
+
+export const IconUsers = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19" />
+    <circle cx="10" cy="8" r="3.5" />
+    <path d="M20 19v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.7a3.5 3.5 0 0 1 0 6.6" />
+  </Svg>
+);

@@ -50,6 +50,23 @@ export class InvitationRepository {
     return map(data);
   }
 
+  /**
+   * Live pending invites for an org, newest first: status is still 'pending' AND
+   * the TTL has not lapsed. Invites are never transitioned to an 'expired' status,
+   * so the expiry must be enforced here rather than trusted from `status`.
+   */
+  async listPendingForOrg(organizationId: string): Promise<Invitation[]> {
+    const { data, error } = await this.db
+      .from("invitations")
+      .select()
+      .eq("organization_id", organizationId)
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(map);
+  }
+
   async findByToken(token: string): Promise<Invitation | null> {
     const { data } = await this.db
       .from("invitations")

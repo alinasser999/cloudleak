@@ -4,8 +4,8 @@ import { IconArrowRight } from "../components/icons";
 export default function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <p className="font-mono text-6xl font-semibold tracking-tight text-brand-bright text-glow">404</p>
-      <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink">Page not found</h1>
+      <p className="font-display text-7xl tabular-nums text-brand">404</p>
+      <h1 className="mt-4 font-display text-xl uppercase tracking-[0.01em] text-ink">Page not found</h1>
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         The page you&apos;re looking for doesn&apos;t exist or has moved.
       </p>

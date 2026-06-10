@@ -27,11 +27,11 @@ export function AcceptButton({ token }: { token: string }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-rose-300">{error}</p>}
+      {error && <p className="text-sm text-rose-600">{error}</p>}
       <button
         onClick={accept}
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-all hover:bg-brand active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
       >
         {busy ? "Joining…" : "Accept invite"}
       </button>

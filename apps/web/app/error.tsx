@@ -15,8 +15,8 @@ export default function Error({
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-300/80">Error</p>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-600/80">Error</p>
+      <h1 className="mt-3 font-display text-2xl uppercase leading-none tracking-[0.01em] text-ink">
         Something went wrong
       </h1>
       <p className="mt-2 max-w-sm text-sm text-ink-muted">

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "../../../components/toast";
-import { Panel, Eyebrow } from "../../../components/ui";
+import { Panel, Eyebrow, PageHeading } from "../../../components/ui";
 import { IconScan, IconArrowRight } from "../../../components/icons";
 
 interface Account {
@@ -31,9 +31,9 @@ const totalCount = (s: ScanStats) =>
 
 const STATUS_STYLES: Record<string, string> = {
   queued: "bg-line/8 text-ink-muted ring-line/15",
-  running: "bg-amber-400/15 text-amber-100 ring-amber-300/30",
-  success: "bg-brand/15 text-brand-bright ring-brand/30",
-  error: "bg-rose-500/15 text-rose-200 ring-rose-400/30",
+  running: "bg-amber-500/10 text-amber-700 ring-amber-500/25",
+  success: "bg-brand/12 text-brand-bright ring-brand/30",
+  error: "bg-rose-500/10 text-rose-700 ring-rose-500/25",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -96,12 +96,9 @@ export function ScansClient({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="max-w-4xl space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Scans</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Run a scan to inventory waste across your connected AWS accounts.
-        </p>
-      </div>
+      <PageHeading title="Scans">
+        Run a scan to inventory waste across your connected AWS accounts.
+      </PageHeading>
 
       {connected.length === 0 ? (
         <Panel className="px-4 py-3.5 text-sm text-ink-muted">

@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 /*
- * CloudLeak — "Drenched Emerald" theme.
- * The surface IS the color: a deep emerald canvas, ivory-mint ink,
- * money-green that glows. Tokens are RGB channels so Tailwind's
- * `/opacity` modifiers work (rgb(var(--x) / <alpha-value>)).
+ * CloudLeak — "Operations Bone" theme.
+ * Swiss-industrial: a warm bone canvas, pixel-display type, clay-teal signal,
+ * a live wireframe terrain and a dot-matrix overlay. Tokens are RGB channels
+ * so Tailwind's `/opacity` modifiers work: rgb(var(--x) / <alpha-value>).
  */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --canvas: 4 19 13; /* deepest body */
-  --canvas-2: 6 28 19; /* gradient lift */
-  --surface: 9 36 25; /* panels */
-  --surface-raised: 14 47 33; /* cards on panels / hover */
-  --line: 110 231 183; /* emerald-300, used at low alpha for hairlines */
-  --ink: 235 253 245; /* primary text (mint cream) */
-  --ink-muted: 158 214 187; /* secondary text */
-  --ink-faint: 108 160 136; /* tertiary / large text only */
-  --brand: 16 185 129; /* emerald signal */
-  --brand-bright: 53 233 172; /* glowing money / accent */
-  --brand-deep: 5 150 105;
-  --accent: 45 212 191; /* teal, for data-viz variety */
+  --canvas: 234 232 228; /* #EAE8E4 bone body */
+  --canvas-2: 240 238 234; /* gradient lift */
+  --surface: 245 243 240; /* #F5F3F0 panels */
+  --surface-raised: 255 255 255; /* white cards / hover */
+  --line: 42 40 39; /* ink, used at low alpha for hairlines + dots */
+  --ink: 42 40 39; /* #2A2827 primary text */
+  --ink-muted: 92 88 85; /* secondary text (AA on bone) */
+  --ink-faint: 138 133 129; /* tertiary / large text only */
+  --brand: 0 141 150; /* #008D96 clay teal — fills, large type */
+  --brand-bright: 0 95 102; /* #005F66 acid — text/links/icons, AA on bone */
+  --brand-deep: 0 76 82; /* #004C52 deepest, hairline emphasis */
+  --accent: 13 148 136; /* teal-600, data-viz variety */
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -31,30 +31,32 @@
   body {
     @apply bg-canvas text-ink antialiased;
     min-height: 100dvh;
-    font-feature-settings: "cv05", "ss01";
   }
 
-  /* The drench: a fixed atmospheric field behind every page. */
+  /* Global texture: a faint teal top-wash over a dot-matrix grid. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -10;
     pointer-events: none;
-    background:
-      radial-gradient(1100px 640px at 50% -14%, rgb(var(--brand) / 0.22), transparent 60%),
-      radial-gradient(820px 520px at 94% 2%, rgb(var(--accent) / 0.13), transparent 55%),
-      radial-gradient(760px 760px at -4% 102%, rgb(var(--brand-deep) / 0.18), transparent 60%),
-      linear-gradient(180deg, rgb(var(--canvas-2)), rgb(var(--canvas)) 58%);
+    background-color: rgb(var(--canvas));
+    background-image:
+      radial-gradient(1000px 560px at 50% -12%, rgb(var(--brand) / 0.06), transparent 62%),
+      radial-gradient(circle at center, rgb(var(--line) / 0.06) 1px, transparent 1.5px);
+    background-size:
+      100% 100%,
+      42px 42px;
+    background-repeat: no-repeat, repeat;
   }
 
   ::selection {
-    background: rgb(var(--brand-bright) / 0.28);
+    background: rgb(var(--brand) / 0.22);
     color: rgb(var(--ink));
   }
 
   * {
-    scrollbar-color: rgb(var(--line) / 0.18) transparent;
+    scrollbar-color: rgb(var(--line) / 0.22) transparent;
     scrollbar-width: thin;
   }
   ::-webkit-scrollbar {
@@ -62,49 +64,143 @@
     height: 11px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--line) / 0.14);
+    background: rgb(var(--line) / 0.16);
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--line) / 0.26);
+    background: rgb(var(--line) / 0.28);
     background-clip: padding-box;
   }
 
   input,
   textarea,
   select {
-    color-scheme: dark;
+    color-scheme: light;
   }
   input::placeholder,
   textarea::placeholder {
-    color: rgb(var(--ink-muted) / 0.55);
+    color: rgb(var(--ink-muted) / 0.6);
+  }
+}
+
+@layer components {
+  /* Inter, small, tracked, uppercase — kickers + nav status readouts. */
+  .meta-label {
+    @apply font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted;
+  }
+
+  /* Pulsing live-status dot. */
+  .status-dot {
+    @apply h-2 w-2 shrink-0 rounded-full bg-brand;
+    animation: status-pulse 2s infinite;
   }
 }
 
 @layer utilities {
-  /* Faint blueprint grid — infra texture, masked to fade out. */
+  /* Dot-matrix surface texture, opt-in for hero blocks. */
   .bg-grid {
-    background-image:
-      linear-gradient(to right, rgb(var(--line) / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(var(--line) / 0.06) 1px, transparent 1px);
-    background-size: 46px 46px;
+    background-image: radial-gradient(circle at center, rgb(var(--line) / 0.08) 1px, transparent 1.5px);
+    background-size: 42px 42px;
   }
   .bg-grid-fade {
-    -webkit-mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 75%);
-    mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 75%);
+    -webkit-mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 78%);
+    mask-image: radial-gradient(120% 120% at 50% 0%, #000 35%, transparent 78%);
   }
+  /* On the light theme, "glow" reads as a quiet weight, not a halo. */
   .text-glow {
-    text-shadow: 0 0 28px rgb(var(--brand-bright) / 0.5);
+    text-shadow: none;
   }
   .panel-hairline {
-    box-shadow: inset 0 1px 0 0 rgb(var(--line) / 0.08);
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--surface-raised) / 0.7),
+      0 1px 2px 0 rgb(var(--ink) / 0.04);
   }
   .ring-glow {
     box-shadow:
-      inset 0 1px 0 0 rgb(var(--line) / 0.1),
-      0 24px 70px -28px rgb(var(--brand) / 0.6);
+      inset 0 1px 0 0 rgb(var(--surface-raised) / 0.8),
+      0 34px 70px -34px rgb(var(--ink) / 0.28);
+  }
+  /* Transparent outline display word (hero monumental motif). */
+  .text-stroke {
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(var(--line) / 0.16);
+  }
+
+  /* Cursor-reactive dot field: teal grid revealed only under a pointer spotlight. */
+  .cursor-field {
+    position: fixed;
+    inset: 0;
+    z-index: -9;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    background-image: radial-gradient(circle at center, rgb(var(--brand) / 0.55) 1px, transparent 1.6px);
+    background-size: 42px 42px;
+    -webkit-mask-image: radial-gradient(
+      200px 200px at var(--mx, -999px) var(--my, -999px),
+      #000 0%,
+      transparent 72%
+    );
+    mask-image: radial-gradient(
+      200px 200px at var(--mx, -999px) var(--my, -999px),
+      #000 0%,
+      transparent 72%
+    );
+  }
+
+  /* Typing terminal caret. */
+  .type-caret {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.05em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: rgb(var(--brand));
+    animation: caret-blink 1s steps(1) infinite;
+  }
+
+  /* Animated "detecting…" ellipsis. */
+  .type-dots::after {
+    content: "…";
+    animation: dots-cycle 1.2s steps(4) infinite;
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes status-pulse {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(var(--brand) / 0.4);
+  }
+  70% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 12px rgb(var(--brand) / 0);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(var(--brand) / 0);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dots-cycle {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
   }
 }
 
@@ -117,5 +213,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .status-dot {
+    animation: none;
   }
 }

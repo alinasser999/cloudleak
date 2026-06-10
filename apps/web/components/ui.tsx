@@ -15,14 +15,14 @@ export function Panel({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-line/10 bg-surface/70 panel-hairline ${className}`}
+      className={`rounded-2xl border border-line/10 bg-surface-raised panel-hairline ${className}`}
     >
       {children}
     </div>
   );
 }
 
-/** Mono micro-label for data sections (used inside panels, not as a page eyebrow). */
+/** Tracked micro-label for data sections (used inside panels, not as a page eyebrow). */
 export function Eyebrow({
   children,
   className = "",
@@ -32,10 +32,37 @@ export function Eyebrow({
 }) {
   return (
     <span
-      className={`font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-ink-muted/70 ${className}`}
+      className={`font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted ${className}`}
     >
       {children}
     </span>
+  );
+}
+
+/* ── Page heading ──────────────────────────────────────────────────────── */
+
+/** Pixel-display page title + optional subtitle and right-aligned actions. */
+export function PageHeading({
+  title,
+  children,
+  actions,
+}: {
+  title: string;
+  children?: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+      <div className="min-w-0">
+        <h1 className="font-display text-[1.6rem] uppercase leading-[0.95] tracking-[0.01em] text-ink sm:text-[2rem]">
+          {title}
+        </h1>
+        {children && (
+          <p className="mt-2.5 max-w-xl text-pretty text-sm text-ink-muted">{children}</p>
+        )}
+      </div>
+      {actions}
+    </div>
   );
 }
 
@@ -60,19 +87,19 @@ export function StatTile({
     <div
       className={`group relative overflow-hidden rounded-2xl border p-4 transition-colors ${
         hero
-          ? "border-brand/30 bg-brand/[0.07]"
-          : "border-line/10 bg-surface/60 hover:bg-surface-raised/60"
+          ? "border-brand/30 bg-brand/[0.06]"
+          : "border-line/10 bg-surface-raised hover:bg-surface"
       } panel-hairline ${className}`}
     >
       {hero && (
-        <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand/25 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand/15 blur-3xl" />
       )}
       <div className="relative flex items-start justify-between gap-2">
-        <Eyebrow className={hero ? "text-brand-bright/80" : ""}>{label}</Eyebrow>
+        <Eyebrow className={hero ? "text-brand-deep" : ""}>{label}</Eyebrow>
         {icon && (
           <span
             className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
-              hero ? "bg-brand/20 text-brand-bright" : "bg-line/5 text-ink-muted"
+              hero ? "bg-brand/15 text-brand" : "bg-line/5 text-ink-muted"
             }`}
           >
             {icon}
@@ -80,13 +107,13 @@ export function StatTile({
         )}
       </div>
       <div
-        className={`relative mt-2 font-mono text-3xl font-semibold tabular-nums ${
-          hero ? "text-brand-bright text-glow" : "text-ink"
+        className={`relative mt-2 font-display text-[2rem] leading-none tabular-nums ${
+          hero ? "text-brand" : "text-ink"
         }`}
       >
         {value}
       </div>
-      {hint && <div className="relative mt-1 text-xs text-ink-muted/70">{hint}</div>}
+      {hint && <div className="relative mt-2 text-xs text-ink-muted">{hint}</div>}
     </div>
   );
 }
@@ -132,7 +159,7 @@ export function Sparkline({
           <stop offset="1" stopColor="rgb(var(--accent))" />
         </linearGradient>
         <linearGradient id={`f-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgb(var(--brand) / 0.28)" />
+          <stop offset="0" stopColor="rgb(var(--brand) / 0.22)" />
           <stop offset="1" stopColor="rgb(var(--brand) / 0)" />
         </linearGradient>
       </defs>
@@ -152,35 +179,35 @@ export function Sparkline({
   );
 }
 
-/* ── Shared severity vocabulary ────────────────────────────────────────── */
+/* ── Shared severity vocabulary (light theme) ──────────────────────────── */
 
 export const SEVERITY: Record<
   string,
   { dot: string; text: string; chip: string; bar: string }
 > = {
   critical: {
-    dot: "bg-rose-400",
-    text: "text-rose-300",
-    chip: "bg-rose-500/15 text-rose-200 ring-rose-400/30",
-    bar: "bg-rose-400",
+    dot: "bg-rose-500",
+    text: "text-rose-600",
+    chip: "bg-rose-500/10 text-rose-700 ring-rose-500/25",
+    bar: "bg-rose-500",
   },
   high: {
-    dot: "bg-orange-400",
-    text: "text-orange-300",
-    chip: "bg-orange-500/15 text-orange-200 ring-orange-400/30",
-    bar: "bg-orange-400",
+    dot: "bg-orange-500",
+    text: "text-orange-600",
+    chip: "bg-orange-500/10 text-orange-700 ring-orange-500/25",
+    bar: "bg-orange-500",
   },
   medium: {
-    dot: "bg-amber-300",
-    text: "text-amber-200",
-    chip: "bg-amber-400/15 text-amber-100 ring-amber-300/30",
-    bar: "bg-amber-300",
+    dot: "bg-amber-500",
+    text: "text-amber-600",
+    chip: "bg-amber-500/10 text-amber-700 ring-amber-500/25",
+    bar: "bg-amber-500",
   },
   low: {
-    dot: "bg-sky-400",
-    text: "text-sky-300",
-    chip: "bg-sky-500/15 text-sky-200 ring-sky-400/30",
-    bar: "bg-sky-400",
+    dot: "bg-sky-500",
+    text: "text-sky-600",
+    chip: "bg-sky-500/10 text-sky-700 ring-sky-500/25",
+    bar: "bg-sky-500",
   },
 };
 
@@ -194,8 +221,13 @@ export const sev = (s: string) =>
 
 /* ── Button class presets ──────────────────────────────────────────────── */
 
+const btnFocus =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas";
+
 export const btnPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-all hover:bg-brand-bright active:scale-[0.98] disabled:opacity-50 disabled:shadow-none";
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-all hover:bg-brand active:scale-[0.98] disabled:opacity-50 disabled:shadow-none " +
+  btnFocus;
 
 export const btnGhost =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-line/15 bg-line/[0.03] px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-line/10 active:scale-[0.98] disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-line/15 bg-surface px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brand/40 hover:bg-surface-raised active:scale-[0.98] disabled:opacity-50 " +
+  btnFocus;

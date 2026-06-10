@@ -25,12 +25,15 @@ const config: Config = {
         accent: withAlpha("--accent"),
       },
       fontFamily: {
+        // Pixel display for headings, hero, big figures; Inter for body; mono for code.
+        display: ["var(--font-display)", "ui-monospace", "monospace"],
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        glow: "0 22px 70px -22px rgb(var(--brand) / 0.6)",
-        "glow-sm": "0 12px 34px -14px rgb(var(--brand) / 0.55)",
+        // Soft neutral lift for the light theme (no colored halos).
+        glow: "0 30px 60px -30px rgb(var(--ink) / 0.22)",
+        "glow-sm": "0 14px 30px -16px rgb(var(--ink) / 0.2)",
       },
       keyframes: {
         "drift-a": {

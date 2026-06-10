@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Panel, Eyebrow, btnPrimary } from "../../../../components/ui";
+import { Panel, Eyebrow, PageHeading, btnPrimary } from "../../../../components/ui";
 import { IconCloud, IconShield, IconCheck } from "../../../../components/icons";
 
 interface Account {
@@ -20,7 +20,7 @@ interface InitResult {
 
 const STATUS_STYLES: Record<string, string> = {
   connected: "text-brand-bright",
-  error: "text-rose-300",
+  error: "text-rose-600",
 };
 
 export function AwsSettings({ organizationId }: { organizationId: string }) {
@@ -80,13 +80,10 @@ export function AwsSettings({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="max-w-2xl space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">AWS accounts</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Connect an account with a read-only cross-account role. CloudLeak never asks for access
-          keys.
-        </p>
-      </div>
+      <PageHeading title="AWS accounts">
+        Connect an account with a read-only cross-account role. CloudLeak never asks for access
+        keys.
+      </PageHeading>
 
       {/* Security note */}
       <div className="flex items-start gap-3 rounded-xl border border-brand/20 bg-brand/[0.05] px-4 py-3.5">
@@ -145,7 +142,7 @@ export function AwsSettings({ organizationId }: { organizationId: string }) {
                 {init.account.externalId}
               </code>
             </p>
-            <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-line/10 bg-canvas/80 p-4 font-mono text-xs leading-relaxed text-brand-bright">
+            <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-ink/15 bg-ink p-4 font-mono text-xs leading-relaxed text-[#a7e8e2] shadow-inner">
               {init.terraform}
             </pre>
           </div>
@@ -166,7 +163,7 @@ export function AwsSettings({ organizationId }: { organizationId: string }) {
               placeholder="arn:aws:iam::123456789012:role/CloudLeakReadOnly"
               className={inputCls}
             />
-            {error && <p className="text-sm text-rose-300">{error}</p>}
+            {error && <p className="text-sm text-rose-600">{error}</p>}
             <button type="submit" disabled={busy} className={btnPrimary}>
               {busy ? "Validating…" : "Validate connection"}
             </button>

@@ -2,7 +2,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
-import { Panel, StatTile, Eyebrow, sev } from "../../../components/ui";
+import { Panel, StatTile, Eyebrow, PageHeading, sev } from "../../../components/ui";
 import {
   IconAlert,
   IconDollar,
@@ -81,7 +81,7 @@ function RemediationPanel({ finding }: { finding: Finding }) {
 
       {tab === "terraform" ? (
         <div className="relative">
-          <pre className="max-h-64 overflow-auto whitespace-pre rounded-xl border border-line/10 bg-canvas/80 p-4 font-mono text-xs leading-relaxed text-brand-bright">
+          <pre className="max-h-64 overflow-auto whitespace-pre rounded-xl border border-ink/15 bg-ink p-4 font-mono text-xs leading-relaxed text-[#a7e8e2] shadow-inner">
             {finding.terraformFix}
           </pre>
           <button
@@ -202,13 +202,10 @@ export function FindingsClient({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="max-w-5xl space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Findings</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Waste detected from your most recent scan. Dismiss findings you&apos;ve intentionally
-          accepted.
-        </p>
-      </div>
+      <PageHeading title="Findings">
+        Waste detected from your most recent scan. Dismiss findings you&apos;ve intentionally
+        accepted.
+      </PageHeading>
 
       {/* Summary cards */}
       <motion.div

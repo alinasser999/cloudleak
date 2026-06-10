@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedNumber, EASE_OUT, fadeUp, staggerParent } from "../../../components/motion";
-import { Panel, StatTile, Sparkline, Eyebrow, sev } from "../../../components/ui";
+import { Panel, StatTile, Sparkline, Eyebrow, PageHeading, sev } from "../../../components/ui";
 import {
   IconAlert,
   IconServer,
@@ -109,12 +109,9 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
         transition={{ duration: 0.3 }}
         className="max-w-2xl space-y-6"
       >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Overview</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            Your workspace is ready. Connect an AWS account to start scanning.
-          </p>
-        </div>
+        <PageHeading title="Overview">
+          Your workspace is ready. Connect an AWS account to start scanning.
+        </PageHeading>
         <Panel className="overflow-hidden p-10 text-center">
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-brand/15 text-brand-bright">
             <IconCloud className="h-6 w-6" />
@@ -152,18 +149,20 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-wrap items-end justify-between gap-3"
       >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Overview</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">Your AWS cost waste at a glance.</p>
-        </div>
-        {summary.lastScanAt && (
-          <span className="inline-flex items-center gap-2 rounded-full border border-line/10 bg-surface/60 px-3 py-1.5 text-xs text-ink-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-bright" />
-            Last scan {timeAgo(summary.lastScanAt)}
-          </span>
-        )}
+        <PageHeading
+          title="Overview"
+          actions={
+            summary.lastScanAt ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-line/10 bg-surface/60 px-3 py-1.5 text-xs text-ink-muted">
+                <span className="status-dot !h-1.5 !w-1.5" />
+                Last scan {timeAgo(summary.lastScanAt)}
+              </span>
+            ) : null
+          }
+        >
+          Your AWS cost waste at a glance.
+        </PageHeading>
       </motion.div>
 
       {/* Hero savings */}
@@ -181,9 +180,9 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
                 <IconDollar className="h-3.5 w-3.5" /> Savings opportunity
               </span>
             </Eyebrow>
-            <div className="mt-2 font-mono text-5xl font-semibold tabular-nums text-brand-bright text-glow sm:text-6xl">
+            <div className="mt-2 font-display text-5xl tabular-nums text-brand sm:text-6xl">
               <AnimatedNumber value={summary.totalMonthlySavings} format={usd} />
-              <span className="ml-2 text-xl font-normal text-brand-bright/60">/mo</span>
+              <span className="ml-2 text-xl text-brand/55">/mo</span>
             </div>
             <p className="mt-2 text-sm text-ink-muted">
               Across{" "}
@@ -331,8 +330,8 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
                             scan.status === "success"
                               ? "bg-brand"
                               : scan.status === "error"
-                                ? "bg-rose-400"
-                                : "animate-pulse bg-amber-300"
+                                ? "bg-rose-500"
+                                : "animate-pulse bg-amber-500"
                           }`}
                         />
                         <div className="min-w-0 flex-1 border-b border-line/5 pb-3">
@@ -349,7 +348,7 @@ export function OverviewClient({ organizationId }: { organizationId: string }) {
                           <div className="mt-0.5 text-xs text-ink-muted">
                             {totalRes > 0 ? `${totalRes} resources` : "0 resources"}
                             {scan.stats.errors.length > 0 && (
-                              <span className="ml-2 text-rose-300">
+                              <span className="ml-2 text-rose-600">
                                 {scan.stats.errors.length} error
                                 {scan.stats.errors.length !== 1 ? "s" : ""}
                               </span>

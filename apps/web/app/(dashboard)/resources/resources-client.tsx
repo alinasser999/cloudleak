@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AnimatedNumber, fadeUp, staggerParent } from "../../../components/motion";
-import { Panel, StatTile } from "../../../components/ui";
+import { Panel, StatTile, PageHeading } from "../../../components/ui";
 import { IconServer, IconDollar, IconSliders } from "../../../components/icons";
 
 interface Resource {
@@ -80,12 +80,9 @@ export function ResourcesClient({ organizationId }: { organizationId: string }) 
 
   return (
     <div className="max-w-5xl space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Resources</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Inventory from your most recent scan, with estimated monthly cost.
-        </p>
-      </div>
+      <PageHeading title="Resources">
+        Inventory from your most recent scan, with estimated monthly cost.
+      </PageHeading>
 
       <motion.div
         variants={staggerParent}

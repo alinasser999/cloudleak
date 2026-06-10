@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeUp, staggerParent } from "../../../../components/motion";
 import { useToast } from "../../../../components/toast";
-import { Panel } from "../../../../components/ui";
+import { Panel, PageHeading } from "../../../../components/ui";
 import { IconCheck, IconCard } from "../../../../components/icons";
 
 interface Subscription {
@@ -109,12 +109,9 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
 
   return (
     <div className="max-w-3xl space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Billing</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Manage your subscription plan and payment details.
-        </p>
-      </div>
+      <PageHeading title="Billing">
+        Manage your subscription plan and payment details.
+      </PageHeading>
 
       {/* Current plan badge */}
       <Panel className="flex items-center gap-3 p-4">
@@ -179,7 +176,7 @@ export function BillingClient({ organizationId }: { organizationId: string }) {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-ink">{plan.label}</p>
-                  <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-ink">{plan.price}</p>
+                  <p className="mt-1 font-display text-2xl tabular-nums text-ink">{plan.price}</p>
                 </div>
                 {isCurrent && (
                   <span className="rounded-full bg-brand/15 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-brand-bright">

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { EASE_OUT } from "../../../components/motion";
 import { useToast } from "../../../components/toast";
-import { Panel, StatTile, Eyebrow, sev } from "../../../components/ui";
+import { Panel, StatTile, Eyebrow, PageHeading, sev } from "../../../components/ui";
 import { IconDollar, IconAlert, IconScan, IconServer, IconReport } from "../../../components/icons";
 
 interface ScanStats {
@@ -76,8 +76,8 @@ function formatType(t: string): string {
 
 const STATUS_DOT: Record<string, string> = {
   success: "bg-brand",
-  error: "bg-rose-400",
-  running: "bg-amber-300 animate-pulse",
+  error: "bg-rose-500",
+  running: "bg-amber-500 animate-pulse",
   queued: "bg-ink-faint animate-pulse",
 };
 
@@ -147,24 +147,24 @@ export function ReportsClient({ organizationId }: { organizationId: string }) {
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-wrap items-start justify-between gap-3"
       >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Reports</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            Scan history and savings analysis for your organization.
-          </p>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => void sendDigest()}
-          disabled={sending}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright disabled:opacity-60"
+        <PageHeading
+          title="Reports"
+          actions={
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => void sendDigest()}
+              disabled={sending}
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-colors hover:bg-brand-bright disabled:opacity-60"
+            >
+              <IconReport className="h-4 w-4" />
+              {sending ? "Sending…" : "Send weekly digest"}
+            </motion.button>
+          }
         >
-          <IconReport className="h-4 w-4" />
-          {sending ? "Sending…" : "Send weekly digest"}
-        </motion.button>
+          Scan history and savings analysis for your organization.
+        </PageHeading>
       </motion.div>
 
       {/* Summary cards */}

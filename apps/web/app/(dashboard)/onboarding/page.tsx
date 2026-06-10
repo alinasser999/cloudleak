@@ -18,10 +18,10 @@ export default async function OnboardingPage() {
       <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/15 text-brand-bright">
         <IconLeaf className="h-6 w-6" />
       </span>
-      <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">
+      <h1 className="mt-5 font-display text-[1.7rem] uppercase leading-none tracking-[0.01em] text-ink sm:text-[2rem]">
         Create your organization
       </h1>
-      <p className="mt-1.5 text-sm text-ink-muted">
+      <p className="mt-2.5 text-sm text-ink-muted">
         This is where your AWS accounts and findings will live.
       </p>
 

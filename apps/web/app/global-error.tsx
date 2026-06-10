@@ -19,11 +19,12 @@ export default function GlobalError({
             justifyContent: "center",
             padding: "1.5rem",
             textAlign: "center",
-            color: "#0b1220",
+            background: "#EAE8E4",
+            color: "#2A2827",
           }}
         >
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>Something went wrong</h1>
-          <p style={{ marginTop: "0.5rem", color: "rgba(11,18,32,0.55)", fontSize: "0.875rem" }}>
+          <p style={{ marginTop: "0.5rem", color: "rgba(42,40,39,0.62)", fontSize: "0.875rem" }}>
             A critical error occurred. Please reload the page.
           </p>
           <button
@@ -31,7 +32,7 @@ export default function GlobalError({
             style={{
               marginTop: "1.5rem",
               borderRadius: "0.5rem",
-              background: "#10b981",
+              background: "#008D96",
               color: "white",
               padding: "0.5rem 1rem",
               fontWeight: 600,

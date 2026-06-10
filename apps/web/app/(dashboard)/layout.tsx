@@ -41,7 +41,7 @@ function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolea
   return (
     <Link
       href={href}
-      className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+      className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
         active ? "text-ink" : "text-ink-muted hover:bg-line/5 hover:text-ink"
       }`}
     >
@@ -61,11 +61,11 @@ function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolea
 function NavContent({ isActive }: { isActive: (href: string) => boolean }) {
   return (
     <div className="flex h-full flex-col">
-      <Link href="/overview" className="flex items-center gap-2 px-3 text-base font-semibold text-ink">
+      <Link href="/overview" className="flex items-center gap-2 px-3 text-ink">
         <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand/15 text-brand-bright">
           <IconLeaf className="h-4 w-4" />
         </span>
-        CloudLeak
+        <span className="font-display text-base uppercase tracking-[0.08em]">CloudLeak</span>
       </Link>
 
       <nav className="mt-7 space-y-1">
@@ -141,7 +141,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <button
                     onClick={() => setDrawerOpen(false)}
                     aria-label="Close navigation menu"
-                    className="absolute right-3 top-5 rounded-lg p-1.5 text-ink-muted hover:bg-line/10 hover:text-ink"
+                    className="absolute right-2 top-4 grid h-11 w-11 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-line/10 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
                   >
                     <IconX className="h-5 w-5" />
                   </button>
@@ -157,13 +157,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <button
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Open navigation menu"
-                className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-line/10 hover:text-ink"
+                className="-ml-1.5 grid h-11 w-11 place-items-center rounded-lg text-ink-muted transition-colors hover:bg-line/10 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
               >
                 <IconMenu className="h-5 w-5" />
               </button>
-              <span className="flex items-center gap-2 text-base font-semibold text-ink">
+              <span className="flex items-center gap-2 text-ink">
                 <IconLeaf className="h-4 w-4 text-brand-bright" />
-                CloudLeak
+                <span className="font-display text-base uppercase tracking-[0.08em]">CloudLeak</span>
               </span>
             </header>
 

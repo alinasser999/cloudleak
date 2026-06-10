@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, DotGothic16 } from "next/font/google";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -15,6 +15,14 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+// Pixel-grid display face — headings, hero, big figures.
+const display = DotGothic16({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "CloudLeak — Stop wasting money on AWS",
   description:
@@ -23,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${display.variable}`}>
       <body className="font-sans">{children}</body>
     </html>
   );

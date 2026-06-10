@@ -1,22 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Backdrop } from "../../components/backdrop";
 import { AnimatedNumber, EASE_OUT } from "../../components/motion";
 import { Sparkline, btnPrimary, btnGhost } from "../../components/ui";
+import { StarMotif } from "../../components/star";
+import { SmoothScroll } from "../../components/smooth-scroll";
+import { CursorField } from "../../components/cursor-field";
+import { Magnetic } from "../../components/magnetic";
+import { LiveConsole } from "../../components/live-console";
+import { TypingCode, type CodeLine } from "../../components/typing-code";
 import {
-  IconLeaf,
   IconShield,
   IconScan,
   IconCode,
-  IconCloud,
   IconArrowRight,
   IconCheck,
   IconTrendDown,
   IconSparkles,
   IconDollar,
 } from "../../components/icons";
+
+// Live WebGL terrain — client-only, sits fixed behind the whole page.
+const Terrain = dynamic(() => import("../../components/terrain").then((m) => m.Terrain), {
+  ssr: false,
+});
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
@@ -55,21 +64,54 @@ const STATS = [
   { value: 0, format: (n: number) => `${n}`, label: "Access keys stored" },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
+const TF_LINES: CodeLine[] = [
+  { text: "# Release unattached Elastic IP", cls: "text-ink-faint" },
+  { text: '- resource "aws_eip" "legacy" {', cls: "text-rose-600" },
+  { text: "-   instance = null", cls: "text-rose-600" },
+  { text: "- }", cls: "text-rose-600" },
+  { text: "+ # removed · saves $3.60/mo", cls: "text-brand-deep" },
+];
+
+const reveal = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE_OUT } },
 };
+
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  // Mount-based (not whileInView): a scroll-gated reveal ships blank in headless
+  // / non-scrolled renders. This stays visible while still animating in.
+  return (
+    <motion.div
+      className={className}
+      variants={reveal}
+      initial="hidden"
+      animate="show"
+      transition={{ delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-dvh overflow-x-clip">
+      <SmoothScroll />
+      <Terrain opacity={0.42} />
+      <CursorField />
+
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-line/5 bg-canvas/60 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-line/8 bg-canvas/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="flex items-center gap-2 text-base font-semibold tracking-tight text-ink">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand/15 text-brand-bright">
-              <IconLeaf className="h-4 w-4" />
-            </span>
+          <span className="font-display text-xl uppercase tracking-[-0.02em] text-ink">
             CloudLeak
           </span>
           <nav className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
@@ -90,414 +132,324 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative">
-        <Backdrop />
-        <div className="mx-auto max-w-6xl px-6 pb-10 pt-20 text-center sm:pt-28">
+      <section className="relative mx-auto grid max-w-6xl grid-cols-12 items-end gap-8 px-6 pb-16 pt-24 sm:pt-32">
+        <span
+          aria-hidden="true"
+          className="text-stroke pointer-events-none absolute right-4 top-0 hidden font-display text-[15vw] uppercase leading-none tracking-[-0.04em] [writing-mode:vertical-rl] lg:flex lg:h-full lg:items-center"
+        >
+          Savings
+        </span>
+
+        <div className="col-span-12 flex flex-col gap-7 lg:col-span-9">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE_OUT }}
-            className="inline-flex items-center gap-2 rounded-full border border-line/15 bg-line/[0.04] px-3.5 py-1.5 text-xs font-medium text-ink-muted"
+            variants={reveal}
+            initial="hidden"
+            animate="show"
+            className="flex items-center gap-4"
           >
-            <IconShield className="h-3.5 w-3.5 text-brand-bright" />
-            Read-only · Cross-account · No access keys
+            <StarMotif className="text-brand" />
+            <span className="meta-label">Precision Cloud Cost Engineering</span>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.05 }}
-            className="mx-auto mt-6 max-w-4xl text-balance text-[clamp(2.5rem,6.5vw,4.75rem)] font-semibold leading-[0.98] tracking-[-0.03em] text-ink"
+            variants={reveal}
+            initial="hidden"
+            animate="show"
+            transition={{ delay: 0.06 }}
+            className="font-display text-[clamp(2.6rem,7vw,5.75rem)] uppercase leading-[1.04] tracking-[-0.02em] text-ink"
           >
-            Stop burning cash on{" "}
-            <span className="relative whitespace-nowrap text-brand-bright text-glow">idle AWS.</span>
+            Stop Burning Cash
+            <br />
+            On Idle AWS.
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.12 }}
-            className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-ink-muted"
+            variants={reveal}
+            initial="hidden"
+            animate="show"
+            transition={{ delay: 0.12 }}
+            className="max-w-2xl text-pretty text-[clamp(1.05rem,1.6vw,1.4rem)] leading-relaxed text-ink-muted"
           >
             CloudLeak scans your account in minutes, finds the waste, and hands you a
             Terraform diff to kill it. Then it tracks every dollar you save.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.18 }}
-            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            variants={reveal}
+            initial="hidden"
+            animate="show"
+            transition={{ delay: 0.18 }}
+            className="mt-2 flex flex-col gap-3 sm:flex-row"
           >
-            <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
-              Run a free audit
-              <IconArrowRight className="h-4 w-4" />
-            </Link>
+            <Magnetic>
+              <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
+                Run a free audit
+                <IconArrowRight className="h-4 w-4" />
+              </Link>
+            </Magnetic>
             <a href="#how" className={btnGhost + " px-6 py-3 text-base"}>
               See how it works
             </a>
           </motion.div>
-          <motion.p
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-4 text-sm text-ink-faint"
+            className="mt-2 flex items-center gap-2.5"
           >
-            Built for teams spending $500–$20k/mo on AWS.
-          </motion.p>
-
-          {/* Product preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 36 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: EASE_OUT, delay: 0.28 }}
-            className="relative mx-auto mt-16 max-w-4xl"
-          >
-            <div className="absolute inset-x-8 -bottom-6 h-24 rounded-full bg-brand/30 blur-3xl" />
-            <HeroPreview />
+            <span className="status-dot" />
+            <span className="meta-label">
+              Read-only · Cross-account · No access keys
+            </span>
           </motion.div>
         </div>
+      </section>
+
+      {/* Inside CloudLeak — live product preview */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <Reveal>
+          <LiveConsole />
+        </Reveal>
       </section>
 
       {/* Stats band */}
-      <section className="relative border-y border-line/5 bg-surface/30">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px px-6 py-2 sm:grid-cols-4">
+      <section className="relative border-y border-line/10 bg-surface/60">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 px-6 sm:grid-cols-4">
           {STATS.map((s, i) => (
-            <motion.div
+            <Reveal
               key={s.label}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: i * 0.06 }}
-              className="px-2 py-8 text-center"
+              delay={i * 0.06}
+              className={`px-2 py-9 text-center ${i ? "border-line/10 sm:border-l" : ""}`}
             >
-              <div className="font-mono text-3xl font-semibold tabular-nums text-ink sm:text-4xl">
+              <div className="font-display text-[2.4rem] tabular-nums text-ink sm:text-[3rem]">
                 <AnimatedNumber value={s.value} format={s.format} />
               </div>
-              <div className="mt-1.5 text-xs text-ink-muted">{s.label}</div>
-            </motion.div>
+              <div className="mt-2 meta-label block">{s.label}</div>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="mx-auto max-w-6xl px-6 py-24">
-        <SectionHeading
-          kicker="How it works"
-          title="From connection to Terraform fix in three steps."
-          subtitle="No agents to install, no access keys to rotate. A read-only role is all CloudLeak ever needs."
-        />
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.title}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: i * 0.1 }}
-              className="relative rounded-2xl border border-line/10 bg-surface/50 p-6 panel-hairline"
-            >
-              <div className="flex items-center justify-between">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand-bright">
-                  <step.icon className="h-5 w-5" />
-                </span>
-                <span className="font-mono text-5xl font-semibold leading-none text-line/10">
+      {/* How it works — method */}
+      <section id="how" className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+        <div className="grid grid-cols-12 gap-8 lg:gap-16">
+          <Reveal className="col-span-12 mb-8 h-max lg:sticky lg:top-28 lg:col-span-4 lg:mb-0">
+            <div className="flex items-center gap-3">
+              <StarMotif className="text-brand" size={20} />
+              <span className="meta-label">[01] Operational Protocol</span>
+            </div>
+            <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
+              From Connect To Fix In Three Steps.
+            </h2>
+            <p className="mt-4 max-w-sm text-ink-muted">
+              No agents to install, no access keys to rotate. A read-only role is all
+              CloudLeak ever needs.
+            </p>
+          </Reveal>
+
+          <div className="col-span-12 flex flex-col gap-12 lg:col-span-7 lg:col-start-6 sm:gap-16">
+            {STEPS.map((step, i) => (
+              <Reveal
+                key={step.title}
+                delay={i * 0.08}
+                className="relative border-l border-brand/60 pl-8 sm:pl-12"
+              >
+                <div className="absolute -left-[1.15rem] -top-2 bg-canvas p-1.5 font-display text-3xl leading-none text-brand">
                   {String(i + 1).padStart(2, "0")}
-                </span>
-              </div>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">{step.body}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features bento */}
-      <section id="features" className="mx-auto max-w-6xl px-6 pb-24">
-        <SectionHeading
-          kicker="What you get"
-          title="Findings you can act on, not another dashboard."
-        />
-        <div className="mt-14 grid gap-5 lg:grid-cols-3">
-          {/* Large: Terraform fix */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="relative overflow-hidden rounded-2xl border border-line/10 bg-surface/60 p-7 panel-hairline lg:row-span-2"
-          >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand-bright">
-              <IconCode className="h-5 w-5" />
-            </span>
-            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">Terraform-aware fixes</h3>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Get a copy-paste Terraform diff for each change, so your infrastructure-as-code
-              stays the source of truth. Prefer to click? Manual steps ship alongside.
-            </p>
-            <div className="mt-6 overflow-hidden rounded-xl border border-line/10 bg-canvas/80 font-mono text-xs leading-relaxed">
-              <div className="flex items-center gap-1.5 border-b border-line/10 px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
-                <span className="h-2.5 w-2.5 rounded-full bg-brand/70" />
-                <span className="ml-2 text-[11px] text-ink-faint">fix.tf</span>
-              </div>
-              <pre className="overflow-x-auto p-4">
-                <span className="text-ink-faint"># Release unattached Elastic IP</span>
-                {"\n"}
-                <span className="text-rose-300">- resource "aws_eip" "legacy" {"{"}</span>
-                {"\n"}
-                <span className="text-rose-300">-   instance = null</span>
-                {"\n"}
-                <span className="text-rose-300">- {"}"}</span>
-                {"\n"}
-                <span className="text-brand-bright">+ # removed · saves $3.60/mo</span>
-              </pre>
-            </div>
-          </motion.div>
-
-          {/* Actionable remediation */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ delay: 0.06 }}
-            className="rounded-2xl border border-line/10 bg-surface/60 p-7 panel-hairline"
-          >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand-bright">
-              <IconSparkles className="h-5 w-5" />
-            </span>
-            <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">Actionable remediation</h3>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Every finding carries a confidence score, a risk score and estimated savings, so
-              you know exactly what to change and what it's worth.
-            </p>
-          </motion.div>
-
-          {/* Savings tracking */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ delay: 0.12 }}
-            className="overflow-hidden rounded-2xl border border-line/10 bg-surface/60 p-7 panel-hairline"
-          >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand-bright">
-              <IconTrendDown className="h-5 w-5" />
-            </span>
-            <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">Savings tracking</h3>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Watch projected versus implemented savings climb over time, with executive-ready
-              weekly digests.
-            </p>
-            <Sparkline data={SPARK} className="mt-5 h-12 w-full" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Security */}
-      <section id="security" className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="relative overflow-hidden rounded-3xl border border-line/10 bg-surface/50 panel-hairline">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand/15 blur-3xl" />
-          <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-2">
-            <div>
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/15 text-brand-bright">
-                <IconShield className="h-6 w-6" />
-              </span>
-              <h2 className="mt-6 text-balance text-3xl font-semibold tracking-tight text-ink">
-                Least privilege, by design.
-              </h2>
-              <p className="mt-3 max-w-md text-pretty leading-relaxed text-ink-muted">
-                CloudLeak reads your inventory through a scoped, read-only cross-account role.
-                We can describe and list. We can't touch a thing.
-              </p>
-              <Link href="/login" className={btnPrimary + " mt-7"}>
-                Connect securely
-                <IconArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <ul className="grid gap-3 self-center">
-              {[
-                "Cross-account IAM role with a unique external ID",
-                "Read-only: scoped to Describe and List actions",
-                "Access keys are never requested or stored",
-                "Revoke access any time by deleting the role",
-              ].map((point) => (
-                <li
-                  key={point}
-                  className="flex items-start gap-3 rounded-xl border border-line/10 bg-canvas/40 px-4 py-3.5 text-sm text-ink"
-                >
-                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/20 text-brand-bright">
-                    <IconCheck className="h-3 w-3" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/12 text-brand">
+                    <step.icon className="h-5 w-5" />
                   </span>
-                  {point}
-                </li>
-              ))}
-            </ul>
+                  <h3 className="font-display text-2xl uppercase tracking-[-0.01em] text-ink">
+                    {step.title}
+                  </h3>
+                </div>
+                <p className="mt-4 leading-relaxed text-ink-muted">{step.body}</p>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Detectors + CTA */}
-      <section className="relative">
-        <Backdrop className="opacity-80" />
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <h2 className="text-balance text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-                See what you're wasting this month.
-              </h2>
-              <p className="mt-4 max-w-md text-lg text-ink-muted">
-                Connect in about two minutes. Your first findings land before your coffee
-                gets cold.
+      {/* Features */}
+      <section id="features" className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
+        <Reveal className="max-w-2xl">
+          <div className="flex items-center gap-3">
+            <StarMotif className="text-brand" size={20} />
+            <span className="meta-label">[02] What You Get</span>
+          </div>
+          <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
+            Findings You Can Act On.
+          </h2>
+        </Reveal>
+
+        <div className="mt-14 grid gap-5 lg:grid-cols-3">
+          <Reveal className="lg:row-span-2">
+            <div className="relative h-full overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
+                <IconCode className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 font-display text-xl uppercase tracking-[-0.01em] text-ink">
+                Terraform-Aware Fixes
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                Get a copy-paste Terraform diff for each change, so your infrastructure-as-code
+                stays the source of truth. Prefer to click? Manual steps ship alongside.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
-                  Run a free audit
-                  <IconArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/login" className={btnGhost + " px-6 py-3 text-base"}>
-                  Sign in
-                </Link>
+              <div className="mt-6 overflow-hidden rounded-xl border border-line/12 bg-surface-raised font-mono text-xs leading-relaxed">
+                <div className="flex items-center gap-1.5 border-b border-line/10 px-4 py-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-brand/70" />
+                  <span className="ml-2 text-[11px] text-ink-faint">fix.tf</span>
+                </div>
+                <TypingCode lines={TF_LINES} />
               </div>
             </div>
-            <div className="rounded-2xl border border-line/10 bg-surface/60 p-7 panel-hairline">
-              <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-                <IconDollar className="h-4 w-4 text-brand-bright" />
-                Five ways CloudLeak finds money
+          </Reveal>
+
+          <Reveal delay={0.06}>
+            <div className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
+                <IconSparkles className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 font-display text-lg uppercase tracking-[-0.01em] text-ink">
+                Actionable Remediation
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                Every finding carries a confidence score, a risk score and estimated savings, so
+                you know exactly what to change and what it's worth.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.12}>
+            <div className="overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
+                <IconTrendDown className="h-5 w-5" />
+              </span>
+              <h3 className="mt-5 font-display text-lg uppercase tracking-[-0.01em] text-ink">
+                Savings Tracking
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                Watch projected versus implemented savings climb over time, with executive-ready
+                weekly digests.
+              </p>
+              <Sparkline data={SPARK} className="mt-5 h-12 w-full" />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Security */}
+      <section id="security" className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl border border-line/10 bg-surface panel-hairline">
+            <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-2">
+              <div>
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/12 text-brand">
+                  <IconShield className="h-6 w-6" />
+                </span>
+                <h2 className="mt-6 font-display text-[clamp(2rem,4vw,3rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
+                  Least Privilege, By Design.
+                </h2>
+                <p className="mt-4 max-w-md text-pretty leading-relaxed text-ink-muted">
+                  CloudLeak reads your inventory through a scoped, read-only cross-account role.
+                  We can describe and list. We can't touch a thing.
+                </p>
+                <Magnetic className="mt-7">
+                  <Link href="/login" className={btnPrimary}>
+                    Connect securely
+                    <IconArrowRight className="h-4 w-4" />
+                  </Link>
+                </Magnetic>
               </div>
-              <ul className="mt-5 space-y-3">
-                {DETECTORS.map((d, i) => (
-                  <li key={d} className="flex items-center gap-3 text-sm text-ink-muted">
-                    <span className="font-mono text-xs text-brand-bright">
-                      {String(i + 1).padStart(2, "0")}
+              <ul className="grid gap-3 self-center">
+                {[
+                  "Cross-account IAM role with a unique external ID",
+                  "Read-only: scoped to Describe and List actions",
+                  "Access keys are never requested or stored",
+                  "Revoke access any time by deleting the role",
+                ].map((point) => (
+                  <li
+                    key={point}
+                    className="flex items-start gap-3 rounded-xl border border-line/10 bg-surface-raised px-4 py-3.5 text-sm text-ink"
+                  >
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand/15 text-brand">
+                      <IconCheck className="h-3 w-3" />
                     </span>
-                    <span className="h-px flex-1 bg-line/10" />
-                    <span className="text-right text-ink">{d}</span>
+                    {point}
                   </li>
                 ))}
               </ul>
             </div>
           </div>
+        </Reveal>
+      </section>
+
+      {/* Detectors + CTA */}
+      <section className="relative mx-auto max-w-6xl px-6 py-24 sm:py-32">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <Reveal>
+            <h2 className="font-display text-[clamp(3rem,8vw,6rem)] uppercase leading-[0.98] tracking-[-0.02em] text-brand">
+              See What
+              <br />
+              You&apos;re Wasting.
+            </h2>
+            <p className="mt-6 max-w-md text-lg text-ink-muted">
+              Connect in about two minutes. Your first findings land before your coffee
+              gets cold.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Magnetic>
+                <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
+                  Run a free audit
+                  <IconArrowRight className="h-4 w-4" />
+                </Link>
+              </Magnetic>
+              <Link href="/login" className={btnGhost + " px-6 py-3 text-base"}>
+                Sign in
+              </Link>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <div className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+              <div className="flex items-center gap-2 font-display text-sm uppercase tracking-[-0.01em] text-ink">
+                <IconDollar className="h-4 w-4 text-brand" />
+                Five ways CloudLeak finds money
+              </div>
+              <ul className="mt-6 space-y-4">
+                {DETECTORS.map((d, i) => (
+                  <li key={d} className="flex items-center gap-3 text-sm">
+                    <span className="font-display text-base text-brand">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="h-px flex-1 bg-line/12" />
+                    <span className="text-right text-ink">{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-line/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 text-sm text-ink-muted sm:flex-row">
-          <span className="flex items-center gap-2 font-semibold text-ink">
-            <IconLeaf className="h-4 w-4 text-brand-bright" />
+      <footer className="border-t border-line/10 bg-surface/60">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 text-sm sm:flex-row">
+          <span className="font-display text-lg uppercase tracking-[-0.02em] text-ink">
             CloudLeak
           </span>
-          <span className="text-ink-faint">
-            © {new Date().getFullYear()} CloudLeak. Stop wasting money on AWS.
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="status-dot" />
+            <span className="meta-label">Stop wasting money on AWS</span>
+          </div>
+          <span className="text-ink-faint">© {new Date().getFullYear()} CloudLeak</span>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function SectionHeading({
-  kicker,
-  title,
-  subtitle,
-}: {
-  kicker: string;
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      initial="hidden"
-      animate="show"
-      viewport={{ once: true, margin: "-80px" }}
-      className="mx-auto max-w-2xl text-center"
-    >
-      <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-brand-bright/80">
-        {kicker}
-      </span>
-      <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-        {title}
-      </h2>
-      {subtitle && <p className="mt-3 text-pretty text-ink-muted">{subtitle}</p>}
-    </motion.div>
-  );
-}
-
-function HeroPreview() {
-  return (
-    <div className="ring-glow relative overflow-hidden rounded-2xl border border-line/15 bg-surface/80 text-left backdrop-blur-xl">
-      {/* window chrome */}
-      <div className="flex items-center gap-2 border-b border-line/10 px-4 py-3">
-        <span className="h-3 w-3 rounded-full bg-rose-400/70" />
-        <span className="h-3 w-3 rounded-full bg-amber-300/70" />
-        <span className="h-3 w-3 rounded-full bg-brand/70" />
-        <span className="ml-3 font-mono text-[11px] text-ink-faint">cloudleak · overview</span>
-        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-2.5 py-1 text-[11px] font-medium text-brand-bright">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-bright" />
-          live
-        </span>
-      </div>
-      <div className="grid gap-4 p-5 sm:grid-cols-5">
-        {/* hero savings */}
-        <div className="relative overflow-hidden rounded-xl border border-brand/30 bg-brand/[0.08] p-5 sm:col-span-3">
-          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-brand/30 blur-2xl" />
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-brand-bright/80">
-            Monthly savings found
-          </div>
-          <div className="mt-2 flex items-end gap-2">
-            <span className="font-mono text-4xl font-semibold tabular-nums text-brand-bright text-glow">
-              $4,820
-            </span>
-            <span className="mb-1 text-sm text-ink-muted">/mo</span>
-          </div>
-          <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-bright">
-            <IconTrendDown className="h-3.5 w-3.5" />
-            18% more than last scan
-          </div>
-          <Sparkline data={SPARK} className="mt-4 h-12 w-full" animate={false} />
-        </div>
-        {/* small stats */}
-        <div className="grid gap-4 sm:col-span-2">
-          <div className="rounded-xl border border-line/10 bg-canvas/50 p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted/70">
-              Open findings
-            </div>
-            <div className="mt-1 font-mono text-2xl font-semibold tabular-nums text-ink">23</div>
-          </div>
-          <div className="rounded-xl border border-line/10 bg-canvas/50 p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted/70">
-              Resources tracked
-            </div>
-            <div className="mt-1 font-mono text-2xl font-semibold tabular-nums text-ink">411</div>
-          </div>
-        </div>
-        {/* finding rows */}
-        <div className="rounded-xl border border-line/10 bg-canvas/40 sm:col-span-5">
-          {[
-            { sev: "bg-rose-400", name: "Stopped EC2 · i-0a8f3", save: "$182" },
-            { sev: "bg-amber-300", name: "Unattached EBS · vol-77c1", save: "$64" },
-            { sev: "bg-sky-400", name: "Old snapshot · snap-91de", save: "$12" },
-          ].map((r, i) => (
-            <div
-              key={r.name}
-              className={`flex items-center gap-3 px-4 py-3 text-sm ${i ? "border-t border-line/8" : ""}`}
-            >
-              <span className={`h-2 w-2 rounded-full ${r.sev}`} />
-              <span className="font-mono text-xs text-ink-muted">{r.name}</span>
-              <span className="ml-auto font-mono font-semibold tabular-nums text-brand-bright">
-                {r.save}/mo
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

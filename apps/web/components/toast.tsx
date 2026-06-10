@@ -43,9 +43,9 @@ const VARIANT_STYLES: Record<ToastVariant, { bar: string; icon: ReactNode }> = {
     ),
   },
   error: {
-    bar: "bg-rose-400",
+    bar: "bg-rose-500",
     icon: (
-      <svg className="h-4 w-4 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg className="h-4 w-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
       </svg>
     ),
@@ -105,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 24, scale: 0.96 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="pointer-events-auto flex items-start gap-3 overflow-hidden rounded-xl border border-line/12 bg-surface/95 p-3.5 shadow-xl shadow-canvas/60 backdrop-blur-xl"
+                className="pointer-events-auto flex items-start gap-3 overflow-hidden rounded-xl border border-line/12 bg-surface-raised/95 p-3.5 shadow-lg shadow-ink/10 backdrop-blur-xl"
               >
                 <span className={`mt-0.5 h-4 w-1 shrink-0 rounded-full ${style.bar}`} />
                 <span className="mt-0.5 shrink-0">{style.icon}</span>

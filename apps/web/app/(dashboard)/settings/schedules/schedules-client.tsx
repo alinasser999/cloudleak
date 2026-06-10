@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_OUT } from "../../../../components/motion";
-import { Panel, Eyebrow } from "../../../../components/ui";
+import { Panel, Eyebrow, PageHeading } from "../../../../components/ui";
 import { IconClock, IconInfo, IconArrowRight } from "../../../../components/icons";
 
 // Concrete colors for framer color interpolation (CSS vars can't be tweened).
-const BRAND = "#10b981";
-const OFF = "rgba(110,231,183,0.14)";
+const BRAND = "#008D96";
+const OFF = "rgba(0,141,150,0.14)";
 
 interface Schedule {
   id: string;
@@ -220,7 +220,7 @@ function ScheduleCard({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-3 overflow-hidden text-xs text-rose-300"
+              className="mb-3 overflow-hidden text-xs text-rose-600"
             >
               {state.error}
             </motion.p>
@@ -308,18 +308,18 @@ export function SchedulesClient({ organizationId }: { organizationId: string }) 
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex items-end justify-between"
       >
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Scan schedules</h1>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            Automatically scan connected accounts on a recurring basis.
-          </p>
-        </div>
-        <div className="rounded-xl border border-line/10 bg-surface/60 px-3 py-2 text-right">
-          <Eyebrow>Timezone</Eyebrow>
-          <p className="mt-0.5 font-mono text-xs font-medium text-ink-muted">UTC</p>
-        </div>
+        <PageHeading
+          title="Scan schedules"
+          actions={
+            <div className="rounded-xl border border-line/10 bg-surface/60 px-3 py-2 text-right">
+              <Eyebrow>Timezone</Eyebrow>
+              <p className="mt-0.5 font-mono text-xs font-medium text-ink-muted">UTC</p>
+            </div>
+          }
+        >
+          Automatically scan connected accounts on a recurring basis.
+        </PageHeading>
       </motion.div>
 
       {schedules === null ? (

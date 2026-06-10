@@ -41,7 +41,7 @@ export function OnboardingForm() {
           autoFocus
         />
       </div>
-      {error && <p className="text-sm text-rose-300">{error}</p>}
+      {error && <p className="text-sm text-rose-600">{error}</p>}
       <button type="submit" disabled={busy || name.trim().length < 2} className={btnPrimary + " w-full"}>
         {busy ? "Creating…" : "Create organization"}
         {!busy && <IconArrowRight className="h-4 w-4" />}

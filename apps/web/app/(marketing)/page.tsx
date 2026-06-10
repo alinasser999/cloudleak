@@ -356,7 +356,7 @@ export default function LandingPage() {
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-ink-muted">
                 Every finding carries a confidence score, a risk score and estimated savings, so
-                you know exactly what to change and what it's worth.
+                you know exactly what to change and what it&apos;s worth.
               </p>
             </motion.div>
           </Reveal>
@@ -399,7 +399,7 @@ export default function LandingPage() {
                 />
                 <p className="mt-4 max-w-md text-pretty leading-relaxed text-ink-muted">
                   CloudLeak reads your inventory through a scoped, read-only cross-account role.
-                  We can describe and list. We can't touch a thing.
+                  We can describe and list. We can&apos;t touch a thing.
                 </p>
                 <Magnetic className="mt-7">
                   <Link href="/login" className={btnPrimary}>

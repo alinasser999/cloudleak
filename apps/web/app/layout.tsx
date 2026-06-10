@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter, JetBrains_Mono, DotGothic16 } from "next/font/google";
+import { Providers } from "./providers";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -32,7 +33,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} ${display.variable}`}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

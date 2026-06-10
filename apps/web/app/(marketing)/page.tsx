@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRef } from "react";
 import {
   motion,
+  MotionConfig,
   useScroll,
   useTransform,
   useSpring,
@@ -13,6 +14,8 @@ import {
 import { AnimatedNumber, EASE_OUT } from "../../components/motion";
 import { Sparkline, btnPrimary, btnGhost } from "../../components/ui";
 import { StarMotif } from "../../components/star";
+import { Nav } from "../../components/nav";
+import { RevealText } from "../../components/reveal-text";
 import { SmoothScroll } from "../../components/smooth-scroll";
 import { ScrollProgress } from "../../components/scroll-progress";
 import { CursorField } from "../../components/cursor-field";
@@ -89,20 +92,23 @@ function Reveal({
   children,
   className = "",
   delay = 0,
+  y = 24,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
+  y?: number;
 }) {
-  // Mount-based (not whileInView): a scroll-gated reveal ships blank in headless
-  // / non-scrolled renders. This stays visible while still animating in.
+  const reduce = useReducedMotion();
+  // Scroll-triggered, fires once. `initial={false}` under reduced-motion keeps
+  // content visible with no hidden state; no-JS gets the SSR markup unstyled.
   return (
     <motion.div
       className={className}
-      variants={reveal}
-      initial="hidden"
-      animate="show"
-      transition={{ delay }}
+      initial={reduce ? false : { opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-12% 0px -12% 0px" }}
+      transition={{ duration: 0.7, ease: EASE_OUT, delay }}
     >
       {children}
     </motion.div>
@@ -138,6 +144,7 @@ export default function LandingPage() {
       };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="relative min-h-dvh overflow-x-clip">
       <SmoothScroll />
       <ScrollProgress />
@@ -145,27 +152,7 @@ export default function LandingPage() {
       <CursorField />
 
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-line/8 bg-canvas/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="font-display text-xl uppercase tracking-[-0.02em] text-ink">
-            CloudLeak
-          </span>
-          <nav className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
-            <a href="#how" className="transition-colors hover:text-ink">How it works</a>
-            <a href="#features" className="transition-colors hover:text-ink">Features</a>
-            <a href="#security" className="transition-colors hover:text-ink">Security</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink">
-              Sign in
-            </Link>
-            <Link href="/login" className={btnPrimary + " hidden sm:inline-flex"}>
-              Run free audit
-              <IconArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Nav />
 
       {/* Hero */}
       <section
@@ -181,16 +168,12 @@ export default function LandingPage() {
         </motion.span>
 
         <div className="col-span-12 flex flex-col gap-7 lg:col-span-9">
-          <motion.h1
-            variants={reveal}
-            initial="hidden"
-            animate="show"
+          <RevealText
+            as="h1"
+            text={"Stop Burning Cash\nOn Idle AWS."}
+            stagger={0.07}
             className="font-display text-[clamp(2.6rem,7vw,5.75rem)] uppercase leading-[1.04] tracking-[-0.02em] text-ink"
-          >
-            Stop Burning Cash
-            <br />
-            On Idle AWS.
-          </motion.h1>
+          />
 
           <motion.p
             variants={reveal}
@@ -213,7 +196,7 @@ export default function LandingPage() {
             <Magnetic>
               <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
                 Run a free audit
-                <IconArrowRight className="h-4 w-4" />
+                <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Magnetic>
             <a href="#how" className={btnGhost + " px-6 py-3 text-base"}>
@@ -248,7 +231,7 @@ export default function LandingPage() {
           <Reveal>
             <div className="meta-label text-brand-deep">{STATS[0]!.label}</div>
             <div className="mt-2 font-display text-[clamp(3rem,7vw,4.75rem)] leading-none tabular-nums text-brand">
-              <AnimatedNumber value={STATS[0]!.value} format={STATS[0]!.format} />
+              <AnimatedNumber value={STATS[0]!.value} format={STATS[0]!.format} duration={1.4} startOnView />
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-ink-muted">
               Idle resources priced and flagged across every account teams have connected.
@@ -260,7 +243,7 @@ export default function LandingPage() {
               {STATS.slice(1).map((s) => (
                 <div key={s.label} className="px-4 first:pl-0">
                   <dt className="font-display text-[1.9rem] leading-none tabular-nums text-ink">
-                    <AnimatedNumber value={s.value} format={s.format} />
+                    <AnimatedNumber value={s.value} format={s.format} startOnView />
                   </dt>
                   <dd className="mt-2 meta-label">{s.label}</dd>
                 </div>
@@ -275,9 +258,12 @@ export default function LandingPage() {
         <div className="grid grid-cols-12 gap-8 lg:gap-16">
           <Reveal className="col-span-12 mb-8 h-max lg:sticky lg:top-28 lg:col-span-4 lg:mb-0">
             <StarMotif className="text-brand" size={24} />
-            <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
-              From Connect To Fix In Three Steps.
-            </h2>
+            <RevealText
+              as="h2"
+              startOnView
+              text={"From Connect To Fix\nIn Three Steps."}
+              className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink"
+            />
             <p className="mt-4 max-w-sm text-ink-muted">
               No agents to install, no access keys to rotate. A read-only role is all
               CloudLeak ever needs.
@@ -321,9 +307,12 @@ export default function LandingPage() {
       <section id="features" className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
         <Reveal className="max-w-2xl">
           <StarMotif className="text-brand" size={24} />
-          <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
-            Findings You Can Act On.
-          </h2>
+          <RevealText
+            as="h2"
+            startOnView
+            text="Findings You Can Act On."
+            className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink"
+          />
         </Reveal>
 
         <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -402,9 +391,12 @@ export default function LandingPage() {
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/12 text-brand">
                   <IconShield className="h-6 w-6" />
                 </span>
-                <h2 className="mt-6 font-display text-[clamp(2rem,4vw,3rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
-                  Least Privilege, By Design.
-                </h2>
+                <RevealText
+                  as="h2"
+                  startOnView
+                  text="Least Privilege, By Design."
+                  className="mt-6 font-display text-[clamp(2rem,4vw,3rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink"
+                />
                 <p className="mt-4 max-w-md text-pretty leading-relaxed text-ink-muted">
                   CloudLeak reads your inventory through a scoped, read-only cross-account role.
                   We can describe and list. We can't touch a thing.
@@ -412,7 +404,7 @@ export default function LandingPage() {
                 <Magnetic className="mt-7">
                   <Link href="/login" className={btnPrimary}>
                     Connect securely
-                    <IconArrowRight className="h-4 w-4" />
+                    <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 </Magnetic>
               </div>
@@ -443,11 +435,13 @@ export default function LandingPage() {
       <section className="relative mx-auto max-w-6xl px-6 py-24 sm:py-32">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <Reveal>
-            <h2 className="font-display text-[clamp(3rem,8vw,6rem)] uppercase leading-[0.98] tracking-[-0.02em] text-brand">
-              See What
-              <br />
-              You&apos;re Wasting.
-            </h2>
+            <RevealText
+              as="h2"
+              startOnView
+              stagger={0.08}
+              text={"See What\nYou're Wasting."}
+              className="font-display text-[clamp(3rem,8vw,6rem)] uppercase leading-[0.98] tracking-[-0.02em] text-brand"
+            />
             <p className="mt-6 max-w-md text-lg text-ink-muted">
               Connect in about two minutes. Your first findings land before your coffee
               gets cold.
@@ -456,7 +450,7 @@ export default function LandingPage() {
               <Magnetic>
                 <Link href="/login" className={btnPrimary + " px-6 py-3 text-base"}>
                   Run a free audit
-                  <IconArrowRight className="h-4 w-4" />
+                  <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Magnetic>
               <Link href="/login" className={btnGhost + " px-6 py-3 text-base"}>
@@ -471,17 +465,30 @@ export default function LandingPage() {
                 <IconDollar className="h-4 w-4 text-brand" />
                 Five ways CloudLeak finds money
               </div>
-              <ul className="mt-6 space-y-4">
+              <motion.ul
+                className="mt-6 space-y-4"
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: "-10% 0px" }}
+                variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}
+              >
                 {DETECTORS.map((d, i) => (
-                  <li key={d} className="group flex items-center gap-3 text-sm">
+                  <motion.li
+                    key={d}
+                    variants={{
+                      hidden: { opacity: 0, x: -14 },
+                      show: { opacity: 1, x: 0, transition: { duration: 0.45, ease: EASE_OUT } },
+                    }}
+                    className="group flex items-center gap-3 text-sm"
+                  >
                     <span className="font-display text-base text-brand transition-colors group-hover:text-brand-deep">
                       {String(i + 1).padStart(2, "0")}
                     </span>
-                    <span className="h-px flex-1 bg-line/12 transition-colors duration-300 group-hover:bg-brand/40" />
+                    <span className="h-px flex-1 origin-left bg-line/12 transition-colors duration-300 group-hover:bg-brand/40" />
                     <span className="text-right text-ink">{d}</span>
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             </div>
           </Reveal>
         </div>
@@ -501,5 +508,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 }

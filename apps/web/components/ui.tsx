@@ -225,7 +225,7 @@ const btnFocus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas";
 
 export const btnPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-all hover:bg-brand active:scale-[0.98] disabled:opacity-50 disabled:shadow-none " +
+  "group btn-sheen inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-canvas shadow-glow-sm transition-all hover:bg-brand hover:shadow-glow active:scale-[0.98] disabled:opacity-50 disabled:shadow-none " +
   btnFocus;
 
 export const btnGhost =

@@ -2,13 +2,14 @@
 
 import {
   animate,
+  useInView,
   useMotionValue,
   useReducedMotion,
   useTransform,
   motion,
   type MotionValue,
 } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Shared motion vocabulary for CloudLeak. One rhythm everywhere:
@@ -36,13 +37,18 @@ export function AnimatedNumber({
   format = (n) => Math.round(n).toLocaleString("en-US"),
   duration = 0.9,
   className,
+  startOnView = false,
 }: {
   value: number;
   format?: (n: number) => string;
   duration?: number;
   className?: string;
+  /** Count up only once the element scrolls into view (vs. on mount). */
+  startOnView?: boolean;
 }) {
   const reduce = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-10% 0px" });
   const mv = useMotionValue(0);
   const text: MotionValue<string> = useTransform(mv, (n) => format(n));
 
@@ -51,11 +57,16 @@ export function AnimatedNumber({
       mv.set(value);
       return;
     }
+    if (startOnView && !inView) return; // hold at 0 until scrolled into view
     const controls = animate(mv, value, { duration, ease: EASE_OUT });
     return () => controls.stop();
-  }, [value, duration, reduce, mv]);
+  }, [value, duration, reduce, mv, startOnView, inView]);
 
-  return <motion.span className={className}>{text}</motion.span>;
+  return (
+    <motion.span ref={ref} className={className}>
+      {text}
+    </motion.span>
+  );
 }
 
 /** Tappable wrapper that scales subtly on press (cards, buttons). */

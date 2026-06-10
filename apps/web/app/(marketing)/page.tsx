@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useReducedMotion,
+} from "framer-motion";
 import { AnimatedNumber, EASE_OUT } from "../../components/motion";
 import { Sparkline, btnPrimary, btnGhost } from "../../components/ui";
 import { StarMotif } from "../../components/star";
 import { SmoothScroll } from "../../components/smooth-scroll";
+import { ScrollProgress } from "../../components/scroll-progress";
 import { CursorField } from "../../components/cursor-field";
 import { Magnetic } from "../../components/magnetic";
 import { LiveConsole } from "../../components/live-console";
@@ -102,9 +110,37 @@ function Reveal({
 }
 
 export default function LandingPage() {
+  const reduce = useReducedMotion();
+  const heroRef = useRef<HTMLElement>(null);
+  const stepsRef = useRef<HTMLDivElement>(null);
+
+  // Hero parallax: the monumental vertical "SAVINGS" drifts up and dims as the
+  // hero scrolls away, giving the type real depth against the live terrain.
+  const { scrollYProgress: heroP } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const savingsY = useTransform(heroP, [0, 1], [0, -160]);
+  const savingsOpacity = useTransform(heroP, [0, 0.85], [1, 0.12]);
+
+  // Reading spine: the protocol's left rail fills as the three steps scroll by.
+  const { scrollYProgress: stepsP } = useScroll({
+    target: stepsRef,
+    offset: ["start 75%", "end 55%"],
+  });
+  const spineScale = useSpring(stepsP, { stiffness: 120, damping: 30, mass: 0.3 });
+
+  const cardHover = reduce
+    ? {}
+    : {
+        whileHover: { y: -4 },
+        transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+      };
+
   return (
     <div className="relative min-h-dvh overflow-x-clip">
       <SmoothScroll />
+      <ScrollProgress />
       <Terrain opacity={0.42} />
       <CursorField />
 
@@ -132,30 +168,23 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto grid max-w-6xl grid-cols-12 items-end gap-8 px-6 pb-16 pt-24 sm:pt-32">
-        <span
+      <section
+        ref={heroRef}
+        className="relative mx-auto grid max-w-6xl grid-cols-12 items-end gap-8 px-6 pb-16 pt-24 sm:pt-32"
+      >
+        <motion.span
           aria-hidden="true"
+          style={reduce ? undefined : { y: savingsY, opacity: savingsOpacity }}
           className="text-stroke pointer-events-none absolute right-4 top-0 hidden font-display text-[15vw] uppercase leading-none tracking-[-0.04em] [writing-mode:vertical-rl] lg:flex lg:h-full lg:items-center"
         >
           Savings
-        </span>
+        </motion.span>
 
         <div className="col-span-12 flex flex-col gap-7 lg:col-span-9">
-          <motion.div
-            variants={reveal}
-            initial="hidden"
-            animate="show"
-            className="flex items-center gap-4"
-          >
-            <StarMotif className="text-brand" />
-            <span className="meta-label">Precision Cloud Cost Engineering</span>
-          </motion.div>
-
           <motion.h1
             variants={reveal}
             initial="hidden"
             animate="show"
-            transition={{ delay: 0.06 }}
             className="font-display text-[clamp(2.6rem,7vw,5.75rem)] uppercase leading-[1.04] tracking-[-0.02em] text-ink"
           >
             Stop Burning Cash
@@ -213,21 +242,31 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Stats band */}
+      {/* Impact band — one lead figure carries it, three facts support */}
       <section className="relative border-y border-line/10 bg-surface/60">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 px-6 sm:grid-cols-4">
-          {STATS.map((s, i) => (
-            <Reveal
-              key={s.label}
-              delay={i * 0.06}
-              className={`px-2 py-9 text-center ${i ? "border-line/10 sm:border-l" : ""}`}
-            >
-              <div className="font-display text-[2.4rem] tabular-nums text-ink sm:text-[3rem]">
-                <AnimatedNumber value={s.value} format={s.format} />
-              </div>
-              <div className="mt-2 meta-label block">{s.label}</div>
-            </Reveal>
-          ))}
+        <div className="mx-auto grid max-w-6xl items-center gap-x-12 gap-y-8 px-6 py-12 lg:grid-cols-[1.5fr_1fr]">
+          <Reveal>
+            <div className="meta-label text-brand-deep">{STATS[0]!.label}</div>
+            <div className="mt-2 font-display text-[clamp(3rem,7vw,4.75rem)] leading-none tabular-nums text-brand">
+              <AnimatedNumber value={STATS[0]!.value} format={STATS[0]!.format} />
+            </div>
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-ink-muted">
+              Idle resources priced and flagged across every account teams have connected.
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <dl className="grid grid-cols-3 divide-x divide-line/12">
+              {STATS.slice(1).map((s) => (
+                <div key={s.label} className="px-4 first:pl-0">
+                  <dt className="font-display text-[1.9rem] leading-none tabular-nums text-ink">
+                    <AnimatedNumber value={s.value} format={s.format} />
+                  </dt>
+                  <dd className="mt-2 meta-label">{s.label}</dd>
+                </div>
+              ))}
+            </dl>
+          </Reveal>
         </div>
       </section>
 
@@ -235,10 +274,7 @@ export default function LandingPage() {
       <section id="how" className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
         <div className="grid grid-cols-12 gap-8 lg:gap-16">
           <Reveal className="col-span-12 mb-8 h-max lg:sticky lg:top-28 lg:col-span-4 lg:mb-0">
-            <div className="flex items-center gap-3">
-              <StarMotif className="text-brand" size={20} />
-              <span className="meta-label">[01] Operational Protocol</span>
-            </div>
+            <StarMotif className="text-brand" size={24} />
             <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
               From Connect To Fix In Three Steps.
             </h2>
@@ -248,27 +284,35 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          <div className="col-span-12 flex flex-col gap-12 lg:col-span-7 lg:col-start-6 sm:gap-16">
-            {STEPS.map((step, i) => (
-              <Reveal
-                key={step.title}
-                delay={i * 0.08}
-                className="relative border-l border-brand/60 pl-8 sm:pl-12"
-              >
-                <div className="absolute -left-[1.15rem] -top-2 bg-canvas p-1.5 font-display text-3xl leading-none text-brand">
-                  {String(i + 1).padStart(2, "0")}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/12 text-brand">
-                    <step.icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="font-display text-2xl uppercase tracking-[-0.01em] text-ink">
-                    {step.title}
-                  </h3>
-                </div>
-                <p className="mt-4 leading-relaxed text-ink-muted">{step.body}</p>
-              </Reveal>
-            ))}
+          <div className="relative col-span-12 lg:col-span-7 lg:col-start-6">
+            {/* reading spine: track + scroll-linked clay fill */}
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-px bg-line/15"
+            />
+            <motion.span
+              aria-hidden="true"
+              style={{ scaleY: reduce ? 1 : spineScale }}
+              className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-px origin-top bg-brand"
+            />
+            <div ref={stepsRef} className="flex flex-col gap-12 pl-8 sm:gap-16 sm:pl-12">
+              {STEPS.map((step, i) => (
+                <Reveal key={step.title} delay={i * 0.08} className="relative">
+                  <div className="flex items-center gap-3">
+                    <span className="font-display text-3xl leading-none tabular-nums text-brand">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/12 text-brand">
+                      <step.icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="font-display text-2xl uppercase tracking-[-0.01em] text-ink">
+                      {step.title}
+                    </h3>
+                  </div>
+                  <p className="mt-4 leading-relaxed text-ink-muted">{step.body}</p>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -276,10 +320,7 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
         <Reveal className="max-w-2xl">
-          <div className="flex items-center gap-3">
-            <StarMotif className="text-brand" size={20} />
-            <span className="meta-label">[02] What You Get</span>
-          </div>
+          <StarMotif className="text-brand" size={24} />
           <h2 className="mt-5 font-display text-[clamp(2.2rem,4.5vw,3.5rem)] uppercase leading-[1.08] tracking-[-0.02em] text-ink">
             Findings You Can Act On.
           </h2>
@@ -287,7 +328,10 @@ export default function LandingPage() {
 
         <div className="mt-14 grid gap-5 lg:grid-cols-3">
           <Reveal className="lg:row-span-2">
-            <div className="relative h-full overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+            <motion.div
+              {...cardHover}
+              className="relative h-full overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+            >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconCode className="h-5 w-5" />
               </span>
@@ -307,11 +351,14 @@ export default function LandingPage() {
                 </div>
                 <TypingCode lines={TF_LINES} />
               </div>
-            </div>
+            </motion.div>
           </Reveal>
 
           <Reveal delay={0.06}>
-            <div className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+            <motion.div
+              {...cardHover}
+              className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+            >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconSparkles className="h-5 w-5" />
               </span>
@@ -322,11 +369,14 @@ export default function LandingPage() {
                 Every finding carries a confidence score, a risk score and estimated savings, so
                 you know exactly what to change and what it's worth.
               </p>
-            </div>
+            </motion.div>
           </Reveal>
 
           <Reveal delay={0.12}>
-            <div className="overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+            <motion.div
+              {...cardHover}
+              className="overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+            >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconTrendDown className="h-5 w-5" />
               </span>
@@ -338,7 +388,7 @@ export default function LandingPage() {
                 weekly digests.
               </p>
               <Sparkline data={SPARK} className="mt-5 h-12 w-full" />
-            </div>
+            </motion.div>
           </Reveal>
         </div>
       </section>
@@ -423,11 +473,11 @@ export default function LandingPage() {
               </div>
               <ul className="mt-6 space-y-4">
                 {DETECTORS.map((d, i) => (
-                  <li key={d} className="flex items-center gap-3 text-sm">
-                    <span className="font-display text-base text-brand">
+                  <li key={d} className="group flex items-center gap-3 text-sm">
+                    <span className="font-display text-base text-brand transition-colors group-hover:text-brand-deep">
                       {String(i + 1).padStart(2, "0")}
                     </span>
-                    <span className="h-px flex-1 bg-line/12" />
+                    <span className="h-px flex-1 bg-line/12 transition-colors duration-300 group-hover:bg-brand/40" />
                     <span className="text-right text-ink">{d}</span>
                   </li>
                 ))}

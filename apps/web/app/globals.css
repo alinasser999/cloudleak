@@ -18,7 +18,7 @@
   --line: 42 40 39; /* ink, used at low alpha for hairlines + dots */
   --ink: 42 40 39; /* #2A2827 primary text */
   --ink-muted: 92 88 85; /* secondary text (AA on bone) */
-  --ink-faint: 138 133 129; /* tertiary / large text only */
+  --ink-faint: 104 100 97; /* tertiary text — AA (~4.8:1) on bone, ok at small sizes */
   --brand: 0 141 150; /* #008D96 clay teal — fills, large type */
   --brand-bright: 0 95 102; /* #005F66 acid — text/links/icons, AA on bone */
   --brand-deep: 0 76 82; /* #004C52 deepest, hairline emphasis */

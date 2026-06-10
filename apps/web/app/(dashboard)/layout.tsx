@@ -22,7 +22,8 @@ import {
 } from "../../components/icons";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
-type NavItem = { href: string; label: string; icon: Icon };
+type Role = "owner" | "admin" | "member";
+type NavItem = { href: string; label: string; icon: Icon; adminOnly?: boolean };
 
 const NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: IconDashboard },
@@ -35,7 +36,7 @@ const NAV: NavItem[] = [
 const SETTINGS_NAV: NavItem[] = [
   { href: "/settings/aws", label: "AWS Accounts", icon: IconCloud },
   { href: "/settings/schedules", label: "Schedules", icon: IconClock },
-  { href: "/settings/members", label: "Team", icon: IconUsers },
+  { href: "/settings/members", label: "Team", icon: IconUsers, adminOnly: true },
   { href: "/settings/billing", label: "Billing", icon: IconCard },
 ];
 
@@ -60,7 +61,14 @@ function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolea
   );
 }
 
-function NavContent({ isActive }: { isActive: (href: string) => boolean }) {
+function NavContent({
+  isActive,
+  isAdmin,
+}: {
+  isActive: (href: string) => boolean;
+  isAdmin: boolean;
+}) {
+  const settingsNav = SETTINGS_NAV.filter((item) => !item.adminOnly || isAdmin);
   return (
     <div className="flex h-full flex-col">
       <Link href="/overview" className="flex items-center gap-2 px-3 text-ink">
@@ -81,7 +89,7 @@ function NavContent({ isActive }: { isActive: (href: string) => boolean }) {
           Settings
         </p>
         <nav className="mt-2 space-y-1">
-          {SETTINGS_NAV.map((item) => (
+          {settingsNav.map((item) => (
             <NavLink key={item.href} {...item} active={isActive(item.href)} />
           ))}
         </nav>
@@ -106,11 +114,24 @@ function NavContent({ isActive }: { isActive: (href: string) => boolean }) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [role, setRole] = useState<Role | null>(null);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isAdmin = role === "owner" || role === "admin";
 
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me")
+      .then((r) => (r.ok ? (r.json() as Promise<{ role: Role | null }>) : null))
+      .then((d) => !cancelled && d && setRole(d.role))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -118,7 +139,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-dvh">
           {/* Desktop sidebar */}
           <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-line/10 bg-surface/40 px-4 py-6 backdrop-blur-xl md:block">
-            <NavContent isActive={isActive} />
+            <NavContent isActive={isActive} isAdmin={isAdmin} />
           </aside>
 
           {/* Mobile drawer */}
@@ -147,7 +168,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   >
                     <IconX className="h-5 w-5" />
                   </button>
-                  <NavContent isActive={isActive} />
+                  <NavContent isActive={isActive} isAdmin={isAdmin} />
                 </motion.aside>
               </>
             )}

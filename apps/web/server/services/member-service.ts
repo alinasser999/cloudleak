@@ -26,14 +26,17 @@ export class MemberService {
     return createUserClient(this.accessToken);
   }
 
-  private async assertMember(userId: string, organizationId: string): Promise<void> {
+  private async assertAdmin(userId: string, organizationId: string): Promise<void> {
     const m = await new MembershipRepository(this.db()).findForUserInOrg(userId, organizationId);
     if (!m) throw new ForbiddenError("Not a member of this organization");
+    if (m.role !== "owner" && m.role !== "admin") {
+      throw new ForbiddenError("Only owners and admins can view the team");
+    }
   }
 
-  /** Any member of the org may view its roster; non-members are rejected. */
+  /** Owners and admins may view the roster + pending invites; everyone else is rejected. */
   async listTeam(userId: string, organizationId: string): Promise<TeamView> {
-    await this.assertMember(userId, organizationId);
+    await this.assertAdmin(userId, organizationId);
 
     const db = this.db();
     const [members, invites] = await Promise.all([

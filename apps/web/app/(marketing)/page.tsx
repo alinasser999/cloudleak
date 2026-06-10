@@ -319,7 +319,7 @@ export default function LandingPage() {
           <Reveal className="lg:row-span-2">
             <motion.div
               {...cardHover}
-              className="relative h-full overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+              className="relative h-full overflow-hidden rounded-2xl border border-line/10 bg-surface p-7 panel-hairline"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconCode className="h-5 w-5" />
@@ -346,7 +346,7 @@ export default function LandingPage() {
           <Reveal delay={0.06}>
             <motion.div
               {...cardHover}
-              className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+              className="rounded-2xl border border-line/10 bg-surface p-7 panel-hairline"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconSparkles className="h-5 w-5" />
@@ -364,7 +364,7 @@ export default function LandingPage() {
           <Reveal delay={0.12}>
             <motion.div
               {...cardHover}
-              className="overflow-hidden rounded-3xl border border-line/10 bg-surface p-7 panel-hairline"
+              className="overflow-hidden rounded-2xl border border-line/10 bg-surface p-7 panel-hairline"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/12 text-brand">
                 <IconTrendDown className="h-5 w-5" />
@@ -385,7 +385,7 @@ export default function LandingPage() {
       {/* Security */}
       <section id="security" className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-line/10 bg-surface panel-hairline">
+          <div className="relative overflow-hidden rounded-2xl border border-line/10 bg-surface panel-hairline">
             <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-2">
               <div>
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/12 text-brand">
@@ -460,7 +460,7 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal delay={0.1}>
-            <div className="rounded-3xl border border-line/10 bg-surface p-7 panel-hairline">
+            <div className="rounded-2xl border border-line/10 bg-surface p-7 panel-hairline">
               <div className="flex items-center gap-2 font-display text-sm uppercase tracking-[-0.01em] text-ink">
                 <IconDollar className="h-4 w-4 text-brand" />
                 Five ways CloudLeak finds money

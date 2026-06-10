@@ -42,7 +42,7 @@ export function LiveConsole() {
   }, [reduce]);
 
   return (
-    <div className="ring-glow relative overflow-hidden rounded-3xl border border-line/12 bg-surface-raised text-left">
+    <div className="ring-glow relative overflow-hidden rounded-2xl border border-line/12 bg-surface-raised text-left">
       {/* window chrome */}
       <div className="relative z-10 flex items-center gap-2 border-b border-line/10 px-4 py-3">
         <span className="h-3 w-3 rounded-full bg-rose-400/70" />

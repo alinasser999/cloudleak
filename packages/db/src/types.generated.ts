@@ -504,6 +504,11 @@ export type Database = {
           plan: string
         }
       }
+      remove_member: { Args: { p_membership_id: string }; Returns: undefined }
+      update_member_role: {
+        Args: { p_membership_id: string; p_role: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

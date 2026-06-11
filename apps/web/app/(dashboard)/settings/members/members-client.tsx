@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_OUT } from "../../../../components/motion";
 import { Panel, Eyebrow, PageHeading } from "../../../../components/ui";
-import { IconUsers, IconShield, IconSliders, IconInfo } from "../../../../components/icons";
+import { IconUsers, IconShield, IconSliders, IconInfo, IconX } from "../../../../components/icons";
 
 type Role = "owner" | "admin" | "member";
 
@@ -47,6 +47,24 @@ const ROLE_META: Record<Role, { label: string; chip: string; icon: typeof IconSh
     icon: IconUsers,
   },
 };
+
+/**
+ * Who the signed-in user may manage in the UI — a mirror of the server rules
+ * (owner manages everyone, admin manages plain members only). The RPC is the
+ * real gate; this just decides which controls to render. We never expose
+ * controls on your own row to avoid self-demotion/removal foot-guns.
+ */
+function canManage(actorRole: Role, target: Member, isYou: boolean): boolean {
+  if (isYou) return false;
+  if (actorRole === "owner") return true;
+  if (actorRole === "admin") return target.role === "member";
+  return false;
+}
+
+/** Roles the actor may assign — admins can't grant owner. */
+function roleOptions(actorRole: Role): Role[] {
+  return actorRole === "owner" ? ["owner", "admin", "member"] : ["admin", "member"];
+}
 
 const rowVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -99,14 +117,101 @@ function Avatar({ member }: { member: Member }) {
   );
 }
 
+function ManageControls({
+  member,
+  actorRole,
+  pending,
+  confirming,
+  onRoleChange,
+  onRemoveClick,
+  onRemoveConfirm,
+  onRemoveCancel,
+}: {
+  member: Member;
+  actorRole: Role;
+  pending: boolean;
+  confirming: boolean;
+  onRoleChange: (role: Role) => void;
+  onRemoveClick: () => void;
+  onRemoveConfirm: () => void;
+  onRemoveCancel: () => void;
+}) {
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-medium text-ink-muted">Remove?</span>
+        <button
+          type="button"
+          onClick={onRemoveConfirm}
+          disabled={pending}
+          className="rounded-full bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-600 ring-1 ring-inset ring-rose-500/25 transition hover:bg-rose-500/15 disabled:opacity-50"
+        >
+          {pending ? "Removing…" : "Confirm"}
+        </button>
+        <button
+          type="button"
+          onClick={onRemoveCancel}
+          disabled={pending}
+          className="rounded-full px-2 py-1 text-[11px] font-medium text-ink-muted transition hover:text-ink disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <label htmlFor={`role-${member.membershipId}`} className="sr-only">
+        Role for {member.email}
+      </label>
+      <select
+        id={`role-${member.membershipId}`}
+        value={member.role}
+        disabled={pending}
+        onChange={(e) => onRoleChange(e.target.value as Role)}
+        className="rounded-full border border-line/15 bg-surface/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-ink outline-none transition hover:border-line/25 focus:border-brand/40 disabled:opacity-50"
+      >
+        {roleOptions(actorRole).map((r) => (
+          <option key={r} value={r}>
+            {ROLE_META[r].label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onRemoveClick}
+        disabled={pending}
+        aria-label={`Remove ${member.email}`}
+        className="grid h-7 w-7 place-items-center rounded-full text-ink-muted/70 transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-50"
+      >
+        <IconX className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function MemberRow({
   member,
   index,
   isYou,
+  actorRole,
+  pending,
+  confirming,
+  onRoleChange,
+  onRemoveClick,
+  onRemoveConfirm,
+  onRemoveCancel,
 }: {
   member: Member;
   index: number;
   isYou: boolean;
+  actorRole: Role;
+  pending: boolean;
+  confirming: boolean;
+  onRoleChange: (role: Role) => void;
+  onRemoveClick: () => void;
+  onRemoveConfirm: () => void;
+  onRemoveCancel: () => void;
 }) {
   return (
     <motion.li
@@ -128,7 +233,20 @@ function MemberRow({
         </p>
         <p className="truncate font-mono text-xs text-ink-muted">{member.email}</p>
       </div>
-      <RoleChip role={member.role} />
+      {canManage(actorRole, member, isYou) ? (
+        <ManageControls
+          member={member}
+          actorRole={actorRole}
+          pending={pending}
+          confirming={confirming}
+          onRoleChange={onRoleChange}
+          onRemoveClick={onRemoveClick}
+          onRemoveConfirm={onRemoveConfirm}
+          onRemoveCancel={onRemoveCancel}
+        />
+      ) : (
+        <RoleChip role={member.role} />
+      )}
     </motion.li>
   );
 }
@@ -180,12 +298,67 @@ function SkeletonRow({ index }: { index: number }) {
 export function MembersClient({
   organizationId,
   currentUserId,
+  currentUserRole,
 }: {
   organizationId: string;
   currentUserId: string;
+  currentUserRole: Role;
 }) {
   const [team, setTeam] = useState<TeamView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  async function changeRole(membershipId: string, role: Role) {
+    setActionError(null);
+    setPendingId(membershipId);
+    try {
+      const r = await fetch(`/api/members/${membershipId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: { message?: string } } | null;
+        throw new Error(d?.error?.message ?? "Could not update role");
+      }
+      setTeam((t) =>
+        t
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.membershipId === membershipId ? { ...m, role } : m,
+              ),
+            }
+          : t,
+      );
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function removeMember(membershipId: string) {
+    setActionError(null);
+    setPendingId(membershipId);
+    try {
+      const r = await fetch(`/api/members/${membershipId}`, { method: "DELETE" });
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: { message?: string } } | null;
+        throw new Error(d?.error?.message ?? "Could not remove member");
+      }
+      setTeam((t) =>
+        t ? { ...t, members: t.members.filter((m) => m.membershipId !== membershipId) } : t,
+      );
+      setConfirmingId(null);
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -243,6 +416,20 @@ export function MembersClient({
         </Panel>
       ) : (
         <>
+          <AnimatePresence>
+            {actionError && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-4 py-2.5 text-xs font-medium text-rose-600"
+              >
+                {actionError}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <section className="space-y-2.5">
             <Eyebrow className="px-1">Active members</Eyebrow>
             <Panel className="overflow-hidden">
@@ -253,6 +440,16 @@ export function MembersClient({
                     member={m}
                     index={i}
                     isYou={m.userId === currentUserId}
+                    actorRole={currentUserRole}
+                    pending={pendingId === m.membershipId}
+                    confirming={confirmingId === m.membershipId}
+                    onRoleChange={(role) => changeRole(m.membershipId, role)}
+                    onRemoveClick={() => {
+                      setActionError(null);
+                      setConfirmingId(m.membershipId);
+                    }}
+                    onRemoveConfirm={() => removeMember(m.membershipId)}
+                    onRemoveCancel={() => setConfirmingId(null)}
                   />
                 ))}
               </ul>
@@ -288,8 +485,8 @@ export function MembersClient({
           >
             <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted/60" />
             <p className="text-xs leading-relaxed text-ink-muted">
-              Owners and admins can invite new teammates. Roles control who can connect AWS
-              accounts, manage scan schedules, and send invites.
+              Owners can change any teammate&rsquo;s role or remove them; admins can manage members.
+              Roles control who can connect AWS accounts, manage scan schedules, and send invites.
             </p>
           </motion.div>
         </>

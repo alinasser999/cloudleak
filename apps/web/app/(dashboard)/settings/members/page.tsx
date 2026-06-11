@@ -13,7 +13,11 @@ export default async function MembersPage() {
   }
 
   return (
-    <MembersClient organizationId={membership.organizationId} currentUserId={membership.userId} />
+    <MembersClient
+      organizationId={membership.organizationId}
+      currentUserId={membership.userId}
+      currentUserRole={membership.role}
+    />
   );
 }
 

@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_OUT } from "../../../../components/motion";
-import { Panel, Eyebrow, PageHeading } from "../../../../components/ui";
-import { IconUsers, IconShield, IconSliders, IconInfo, IconX } from "../../../../components/icons";
+import { Panel, Eyebrow, PageHeading, btnPrimary } from "../../../../components/ui";
+import {
+  IconUsers,
+  IconShield,
+  IconSliders,
+  IconInfo,
+  IconX,
+  IconPlus,
+  IconCopy,
+  IconCheck,
+} from "../../../../components/icons";
 
 type Role = "owner" | "admin" | "member";
 
@@ -295,6 +304,145 @@ function SkeletonRow({ index }: { index: number }) {
   );
 }
 
+function InviteForm({
+  organizationId,
+  onInvited,
+}: {
+  organizationId: string;
+  onInvited: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"admin" | "member">("member");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setInviteLink(null);
+    setSubmitting(true);
+    try {
+      const r = await fetch("/api/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId, email: email.trim(), role }),
+      });
+      const d = (await r.json().catch(() => null)) as
+        | { invite?: { token?: string }; error?: { message?: string } }
+        | null;
+      if (!r.ok) throw new Error(d?.error?.message ?? "Could not send invite");
+      const token = d?.invite?.token;
+      if (token) setInviteLink(`${window.location.origin}/invite/${token}`);
+      setEmail("");
+      onInvited();
+    } catch (err) {
+      setFormError((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard may be unavailable; the link is still selectable */
+    }
+  }
+
+  const emailValid = /.+@.+\..+/.test(email.trim());
+
+  return (
+    <Panel className="p-5">
+      <form onSubmit={submit} className="space-y-3.5">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <label htmlFor="invite-email" className="sr-only">
+              Teammate email
+            </label>
+            <input
+              id="invite-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teammate@company.com"
+              autoComplete="off"
+              className="w-full rounded-xl border border-line/15 bg-canvas/50 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
+            />
+          </div>
+          <div className="flex gap-3">
+            <label htmlFor="invite-role" className="sr-only">
+              Role
+            </label>
+            <select
+              id="invite-role"
+              value={role}
+              onChange={(e) => setRole(e.target.value as "admin" | "member")}
+              className="rounded-xl border border-line/15 bg-canvas/50 px-3 py-2.5 text-sm font-medium text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button
+              type="submit"
+              disabled={submitting || !emailValid}
+              className={btnPrimary + " whitespace-nowrap"}
+            >
+              {submitting ? "Sending…" : "Invite"}
+              {!submitting && <IconPlus className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {formError && <p className="text-sm font-medium text-rose-600">{formError}</p>}
+
+        <AnimatePresence>
+          {inviteLink && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-1.5 rounded-xl border border-brand/20 bg-brand/[0.05] px-3.5 py-3"
+            >
+              <p className="text-xs font-medium text-ink">
+                Invite created. Share this link — it expires in 7 days.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded-lg bg-canvas/60 px-2.5 py-1.5 font-mono text-xs text-ink-muted">
+                  {inviteLink}
+                </code>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line/15 bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-brand/40"
+                >
+                  {copied ? (
+                    <>
+                      <IconCheck className="h-3.5 w-3.5 text-brand-deep" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <IconCopy className="h-3.5 w-3.5" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </form>
+    </Panel>
+  );
+}
+
 export function MembersClient({
   organizationId,
   currentUserId,
@@ -360,22 +508,22 @@ export function MembersClient({
     }
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/members?organizationId=${organizationId}`)
-      .then(async (r) => {
-        if (!r.ok) {
-          const d = (await r.json().catch(() => null)) as { error?: { message?: string } } | null;
-          throw new Error(d?.error?.message ?? "Could not load members");
-        }
-        return r.json() as Promise<TeamView>;
-      })
-      .then((d) => !cancelled && setTeam(d))
-      .catch((e: Error) => !cancelled && setError(e.message));
-    return () => {
-      cancelled = true;
-    };
+  const loadTeam = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/members?organizationId=${organizationId}`);
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: { message?: string } } | null;
+        throw new Error(d?.error?.message ?? "Could not load members");
+      }
+      setTeam((await r.json()) as TeamView);
+    } catch (e) {
+      setError((e as Error).message);
+    }
   }, [organizationId]);
+
+  useEffect(() => {
+    void loadTeam();
+  }, [loadTeam]);
 
   const memberCount = team?.members.length ?? 0;
 
@@ -399,6 +547,16 @@ export function MembersClient({
         >
           Everyone with access to this organization, and any invites still awaiting acceptance.
         </PageHeading>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="space-y-2.5"
+      >
+        <Eyebrow className="px-1">Invite a teammate</Eyebrow>
+        <InviteForm organizationId={organizationId} onInvited={loadTeam} />
       </motion.div>
 
       {error ? (

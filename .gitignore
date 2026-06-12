@@ -9,3 +9,6 @@ dist/
 .playwright-mcp/
 
 .vercel
+
+# Local Claude Code settings (never commit — can weaken sandbox guardrails)
+.claude/settings.local.json

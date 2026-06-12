@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Panel, Eyebrow, PageHeading } from "@/components/ui";
+import { IconArrowUpRight } from "@/components/icons";
 import { timeAgo, fmtDate, GodModeBadge, ErrorPanel } from "../admin-shared";
 
 interface PlatformUser {
@@ -33,8 +35,11 @@ function UserRow({ user, index }: { user: PlatformUser; index: number }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.3) }}
-      className="flex items-center gap-3.5 px-4 py-3.5"
     >
+      <Link
+        href={`/admin/users/${user.id}`}
+        className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-line/[0.03]"
+      >
       <span className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-line/10 bg-brand/10 text-xs font-semibold text-brand-deep">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -70,6 +75,8 @@ function UserRow({ user, index }: { user: PlatformUser; index: number }) {
       >
         {timeAgo(user.createdAt)}
       </span>
+      <IconArrowUpRight className="h-4 w-4 shrink-0 text-ink-faint transition-colors group-hover:text-ink" />
+      </Link>
     </motion.li>
   );
 }

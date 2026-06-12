@@ -1,6 +1,7 @@
 "use client";
 
-import { IconShield } from "@/components/icons";
+import Link from "next/link";
+import { IconShield, IconArrowRight } from "@/components/icons";
 import { Panel } from "@/components/ui";
 
 /** Relative "time ago" label, e.g. "just now", "5m", "3h", "2d". */
@@ -22,6 +23,28 @@ export function fmtDate(iso: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+export function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Back-navigation link for drill-down detail pages. */
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted transition-colors hover:text-ink"
+    >
+      <IconArrowRight className="h-3.5 w-3.5 rotate-180" />
+      {label}
+    </Link>
+  );
 }
 
 export const usd = new Intl.NumberFormat("en-US", {

@@ -10,7 +10,45 @@ Web → Stripe (billing)
 Web/Worker → AWS (customer accounts via cross-account IAM roles)
 ```
 
-## Prerequisites
+> **Two deploy targets — pick one.** **Vercel (next section) is the primary,
+> recommended path**: it runs the Next.js app and drives the scan/digest worker
+> via a built-in daily cron. The AWS ECS/Fargate path (Terraform, from
+> "Prerequisites" onward) is the self-hosted alternative. Note that on the ECS
+> path the standalone worker handles scheduled scans but **not** weekly digests —
+> those run from the `/api/worker/run` cron route, so on ECS you'd point an
+> external scheduler (EventBridge) at that endpoint.
+
+## Deploying on Vercel (recommended)
+
+1. Import the repo into Vercel. `vercel.json` already configures the monorepo
+   build and registers the cron:
+
+   ```json
+   "crons": [{ "path": "/api/worker/run", "schedule": "0 0 * * *" }]
+   ```
+
+   This one daily cron dispatches due scheduled scans, drains the scan queue, and
+   sends weekly digests (idempotent — at most one per org per week, backed by the
+   `reports` ledger).
+
+2. Set the environment variables from `.env.example` in the Vercel project
+   (Production + Preview): the Supabase trio, `CLOUDLEAK_AWS_ACCOUNT_ID`, the
+   Stripe keys + price IDs, `RESEND_API_KEY`/`RESEND_FROM`, `NEXT_PUBLIC_APP_URL`,
+   `CRON_SECRET`, and optionally `SENTRY_DSN`.
+
+3. **Protect the cron endpoint.** Set `CRON_SECRET`; Vercel Cron sends it as
+   `Authorization: Bearer <CRON_SECRET>`. The route fails closed in production
+   when the secret is unset (503), so configure it before going live — the
+   endpoint runs scans, so an open one is a cost/abuse vector.
+
+4. Run the Supabase migrations (Step 1), configure the Stripe webhook (Step 2),
+   and point your domain at the Vercel deployment.
+
+Skip the Terraform/ECS steps unless you are self-hosting on AWS.
+
+---
+
+## Prerequisites (AWS ECS/Fargate — alternative)
 
 - AWS account with permissions to create ECR, ECS, ALB, IAM, CloudWatch
 - Supabase project (production)
@@ -182,7 +220,29 @@ The Terraform `web_env_vars` and `worker_env_vars` variables inject env vars int
    NEXT_PUBLIC_APP_URL=https://yourdomain.com
    ```
 
-To automate weekly digests, create a scheduled job (AWS EventBridge + Lambda, or a cron in your worker) that POSTs to `/api/reports/digest` for each active organization.
+Weekly digests are **automated** — the `/api/worker/run` cron sends them once
+per organization per week (idempotent via the `reports` ledger). On Vercel this
+is the cron in `vercel.json`; on ECS, point an EventBridge schedule at
+`/api/worker/run` (with the `CRON_SECRET` bearer token). The per-user
+`/api/reports/digest` endpoint remains for on-demand "email me a digest now".
+
+---
+
+## Observability & Health
+
+- **Liveness:** `GET /api/health` is a cheap, dependency-free check — use it for
+  the load balancer (already wired in `infra/main.tf`).
+- **Readiness:** `GET /api/health/ready` verifies database connectivity and
+  returns 503 if Postgres is unreachable — point uptime monitoring here.
+- **Error tracking:** set `SENTRY_DSN` to ship unhandled server, worker, and
+  browser errors to Sentry. Unset, errors are logged to the console only, so the
+  app runs fine without it. Optionally set `SENTRY_RELEASE` (e.g. the git SHA).
+- **Rate limiting:** the invite, AWS-connect, scan, and digest endpoints are rate
+  limited per user (in-memory; swap in Redis for cross-instance limits).
+- **Security headers** (HSTS, X-Frame-Options, nosniff, Referrer-Policy,
+  Permissions-Policy) are applied to every response via `next.config.ts`.
+- **Plan quotas** (AWS accounts, seats, scan cadence) are enforced server-side
+  and driven by the Stripe subscription via the billing webhook.
 
 ---
 

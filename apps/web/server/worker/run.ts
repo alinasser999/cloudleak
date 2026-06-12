@@ -15,6 +15,7 @@ import {
 } from "@cloudleak/db";
 import { buildOrgDigest } from "../services/report-service.js";
 import { sendEmail } from "../email.js";
+import { captureException } from "../observability.js";
 import { runScan } from "@cloudleak/collectors";
 import { runDetection } from "@cloudleak/rules";
 import {
@@ -99,6 +100,10 @@ export async function dispatchDueSchedules(): Promise<number> {
       dispatched++;
     } catch (e) {
       console.error(`[worker] schedule dispatch failed for ${schedule.id}:`, e);
+      await captureException(e, {
+        tags: { source: "worker", task: "schedule" },
+        extra: { scheduleId: schedule.id },
+      });
     }
   }
   return dispatched;
@@ -166,6 +171,7 @@ export async function dispatchWeeklyDigests(): Promise<number> {
       });
     } catch (e) {
       console.error(`[cron] weekly digest failed for org ${orgId}:`, e);
+      await captureException(e, { tags: { source: "worker", task: "digest" }, extra: { orgId } });
     }
   }
   return sent;
@@ -182,6 +188,10 @@ export async function processQueuedScans(limit = 3): Promise<number> {
       processed++;
     } catch (e) {
       console.error(`[worker] scan ${scan.id} failed:`, e);
+      await captureException(e, {
+        tags: { source: "worker", task: "scan" },
+        extra: { scanId: scan.id, orgId: scan.organizationId },
+      });
     }
   }
   return processed;

@@ -19,11 +19,12 @@ import {
   IconMenu,
   IconX,
   IconArrowRight,
+  IconSparkles,
 } from "../../components/icons";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 type Role = "owner" | "admin" | "member";
-type NavItem = { href: string; label: string; icon: Icon; adminOnly?: boolean };
+type NavItem = { href: string; label: string; icon: Icon; adminOnly?: boolean; exact?: boolean };
 
 const NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: IconDashboard },
@@ -38,6 +39,13 @@ const SETTINGS_NAV: NavItem[] = [
   { href: "/settings/schedules", label: "Schedules", icon: IconClock },
   { href: "/settings/members", label: "Team", icon: IconUsers, adminOnly: true },
   { href: "/settings/billing", label: "Billing", icon: IconCard },
+];
+
+// Platform super-admin ("god view") — only rendered for platform admins.
+const PLATFORM_NAV: NavItem[] = [
+  { href: "/admin", label: "Overview", icon: IconSparkles, exact: true },
+  { href: "/admin/users", label: "All Users", icon: IconUsers },
+  { href: "/admin/organizations", label: "Organizations", icon: IconServer },
 ];
 
 function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolean }) {
@@ -62,13 +70,18 @@ function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolea
 }
 
 function NavContent({
+  pathname,
   isActive,
   isAdmin,
+  isPlatformAdmin,
 }: {
+  pathname: string;
   isActive: (href: string) => boolean;
   isAdmin: boolean;
+  isPlatformAdmin: boolean;
 }) {
   const settingsNav = SETTINGS_NAV.filter((item) => !item.adminOnly || isAdmin);
+  const navActive = (item: NavItem) => (item.exact ? pathname === item.href : isActive(item.href));
   return (
     <div className="flex h-full flex-col">
       <Link href="/overview" className="flex items-center gap-2 px-3 text-ink">
@@ -90,10 +103,24 @@ function NavContent({
         </p>
         <nav className="mt-2 space-y-1">
           {settingsNav.map((item) => (
-            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+            <NavLink key={item.href} {...item} active={navActive(item)} />
           ))}
         </nav>
       </div>
+
+      {isPlatformAdmin && (
+        <div className="mt-7">
+          <p className="flex items-center gap-1.5 px-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
+            <IconSparkles className="h-3 w-3" />
+            Platform
+          </p>
+          <nav className="mt-2 space-y-1">
+            {PLATFORM_NAV.map((item) => (
+              <NavLink key={item.href} {...item} active={navActive(item)} />
+            ))}
+          </nav>
+        </div>
+      )}
 
       {/* Footer CTA */}
       <Link
@@ -115,6 +142,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [role, setRole] = useState<Role | null>(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
   const isAdmin = role === "owner" || role === "admin";
 
@@ -125,8 +153,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/me")
-      .then((r) => (r.ok ? (r.json() as Promise<{ role: Role | null }>) : null))
-      .then((d) => !cancelled && d && setRole(d.role))
+      .then((r) =>
+        r.ok ? (r.json() as Promise<{ role: Role | null; isPlatformAdmin?: boolean }>) : null,
+      )
+      .then((d) => {
+        if (cancelled || !d) return;
+        setRole(d.role);
+        setIsPlatformAdmin(d.isPlatformAdmin === true);
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -139,7 +173,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-dvh">
           {/* Desktop sidebar */}
           <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-line/10 bg-surface/40 px-4 py-6 backdrop-blur-xl md:block">
-            <NavContent isActive={isActive} isAdmin={isAdmin} />
+            <NavContent
+              pathname={pathname}
+              isActive={isActive}
+              isAdmin={isAdmin}
+              isPlatformAdmin={isPlatformAdmin}
+            />
           </aside>
 
           {/* Mobile drawer */}
@@ -168,7 +207,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   >
                     <IconX className="h-5 w-5" />
                   </button>
-                  <NavContent isActive={isActive} isAdmin={isAdmin} />
+                  <NavContent
+                    pathname={pathname}
+                    isActive={isActive}
+                    isAdmin={isAdmin}
+                    isPlatformAdmin={isPlatformAdmin}
+                  />
                 </motion.aside>
               </>
             )}

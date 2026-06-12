@@ -28,17 +28,14 @@ export async function POST(req: Request) {
     }
   }
 
-  const [dispatched, processed] = await Promise.all([
+  // dispatchWeeklyDigests is idempotent per calendar week (backed by the reports
+  // ledger), so it's safe to call on every cron tick — it sends only on the
+  // first run of a new week and no-ops afterward.
+  const [dispatched, processed, digests] = await Promise.all([
     dispatchDueSchedules(),
     processQueuedScans(3),
+    dispatchWeeklyDigests(),
   ]);
-
-  // Send weekly digests once a week (Mondays UTC). The cron fires daily; this
-  // keeps the digest cadence weekly without needing per-org send bookkeeping.
-  let digests = 0;
-  if (new Date().getUTCDay() === 1) {
-    digests = await dispatchWeeklyDigests();
-  }
 
   console.log(`[cron] dispatched=${dispatched} processed=${processed} digests=${digests}`);
   return NextResponse.json({ ok: true, dispatched, processed, digests });

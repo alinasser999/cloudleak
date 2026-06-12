@@ -104,13 +104,30 @@ export async function dispatchDueSchedules(): Promise<number> {
   return dispatched;
 }
 
+/** The current ISO-ish week in UTC (Monday→Sunday), as `date` strings. */
+function currentWeekUtc(): { start: string; end: string } {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun..6=Sat
+  const daysSinceMonday = (day + 6) % 7;
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceMonday),
+  );
+  const end = new Date(start.getTime() + 6 * 864e5);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 /**
- * Email the weekly digest to every org's owners and admins. Idempotency is
- * coarse: the cron calls this once on its weekly day, and orgs with no connected
- * AWS account are skipped. Per-org/per-recipient failures are logged, not fatal.
+ * Email the weekly digest to every org's owners and admins, exactly once per
+ * calendar week. Idempotency is backed by the `reports` table: a row keyed by
+ * (organization_id, period_start) records that an org's digest went out this
+ * week, so this is safe to call repeatedly — from the daily cron route or the
+ * worker's poll loop — without re-sending. Orgs with no connected AWS account
+ * are skipped; per-org/per-recipient failures are logged, not fatal.
  */
 export async function dispatchWeeklyDigests(): Promise<number> {
   const db = createServiceClient();
+  const week = currentWeekUtc();
+
   const { data, error } = await db.from("organizations").select("id");
   if (error) throw new Error(`organizations: ${error.message}`);
   const orgs = (data ?? []) as { id: string }[];
@@ -118,8 +135,19 @@ export async function dispatchWeeklyDigests(): Promise<number> {
   let sent = 0;
   for (const { id: orgId } of orgs) {
     try {
+      // Skip if this week's digest was already recorded for the org.
+      const { data: existing } = await db
+        .from("reports")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("period_start", week.start)
+        .limit(1)
+        .maybeSingle();
+      if (existing) continue;
+
       const digest = await buildOrgDigest(db, orgId);
       if (!digest) continue;
+
       const members = await new MembershipRepository(db).listForOrg(orgId);
       const recipients = members
         .filter((m) => m.role === "owner" || m.role === "admin")
@@ -128,6 +156,14 @@ export async function dispatchWeeklyDigests(): Promise<number> {
         await sendEmail({ to, subject: digest.subject, html: digest.html });
         sent++;
       }
+
+      // Record the send so no other invocation repeats it this week.
+      await db.from("reports").insert({
+        organization_id: orgId,
+        period_start: week.start,
+        period_end: week.end,
+        payload: { savings: digest.savings, recipients: recipients.length },
+      });
     } catch (e) {
       console.error(`[cron] weekly digest failed for org ${orgId}:`, e);
     }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { dispatchDueSchedules, processQueuedScans } from "@/server/worker/run";
+import {
+  dispatchDueSchedules,
+  dispatchWeeklyDigests,
+  processQueuedScans,
+} from "@/server/worker/run";
+import { captureException } from "@/server/observability";
 
 // Extend timeout to 60s — requires Vercel Pro. Hobby plan caps at 10s (fake AWS only).
 export const maxDuration = 60;
@@ -24,13 +29,22 @@ export async function POST(req: Request) {
     }
   }
 
-  const [dispatched, processed] = await Promise.all([
-    dispatchDueSchedules(),
-    processQueuedScans(3),
-  ]);
+  try {
+    // dispatchWeeklyDigests is idempotent per calendar week (backed by the reports
+    // ledger), so it's safe to call on every cron tick — it sends only on the
+    // first run of a new week and no-ops afterward.
+    const [dispatched, processed, digests] = await Promise.all([
+      dispatchDueSchedules(),
+      processQueuedScans(3),
+      dispatchWeeklyDigests(),
+    ]);
 
-  console.log(`[cron] dispatched=${dispatched} processed=${processed}`);
-  return NextResponse.json({ ok: true, dispatched, processed });
+    console.log(`[cron] dispatched=${dispatched} processed=${processed} digests=${digests}`);
+    return NextResponse.json({ ok: true, dispatched, processed, digests });
+  } catch (e) {
+    await captureException(e, { tags: { source: "cron" } });
+    return NextResponse.json({ ok: false, error: "worker run failed" }, { status: 500 });
+  }
 }
 
 // Also accept GET so Vercel's cron health check works

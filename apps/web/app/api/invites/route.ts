@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { InviteService } from "@/server/services/invite-service";
 import { handleApiError } from "@/server/api-error-handler";
+import { enforceRateLimit } from "@/server/rate-limit";
 import { ValidationError } from "@cloudleak/core";
 
 const Body = z.object({
@@ -14,6 +15,7 @@ const Body = z.object({
 export async function POST(req: Request) {
   try {
     const { user, accessToken } = await requireUser();
+    enforceRateLimit(`invite:${user.id}`, { limit: 20, windowMs: 60_000 });
     const parsed = Body.safeParse(await req.json());
     if (!parsed.success) throw new ValidationError("organizationId, email, role required");
     const invite = await InviteService.create(
@@ -22,6 +24,7 @@ export async function POST(req: Request) {
       parsed.data.organizationId,
       parsed.data.email,
       parsed.data.role,
+      user.email ?? null,
     );
     return NextResponse.json(
       { invite: { id: invite.id, email: invite.email, token: invite.token } },

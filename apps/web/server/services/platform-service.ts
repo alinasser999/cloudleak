@@ -68,6 +68,42 @@ export interface PlatformOrg {
   estimatedMonthlySavings: number;
 }
 
+export interface AuditEvent {
+  id: number;
+  at: string;
+  action: string;
+  tableName: string;
+  recordId: string | null;
+  actorId: string | null;
+  actorEmail: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface PlatformUserDetail {
+  id: string;
+  email: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  orgs: { id: string; name: string; plan: string; role: string; joinedAt: string }[];
+  recentEvents: AuditEvent[];
+}
+
+export interface PlatformOrgDetail {
+  id: string;
+  name: string;
+  plan: string;
+  createdAt: string;
+  members: { id: string; email: string; fullName: string | null; role: string; joinedAt: string }[];
+  awsAccounts: { accountId: string | null; status: string; createdAt: string }[];
+  scans: number;
+  findingsOpen: number;
+  estimatedMonthlySavings: number;
+  recentEvents: AuditEvent[];
+}
+
 const num = (v: number | string | null): number => (v == null ? 0 : Number(v) || 0);
 
 export class PlatformService {
@@ -301,4 +337,175 @@ export class PlatformService {
       estimatedMonthlySavings: savings.get(o.id) ?? 0,
     }));
   }
+
+  /** Raw, time-ordered audit rows, optionally scoped to one actor or organization. */
+  private async auditRows(
+    filter?: { column: "actor_id" | "organization_id"; value: string },
+    limit = 100,
+  ): Promise<AuditRowRaw[]> {
+    let q = this.db
+      .from("audit_events")
+      .select("id, created_at, actor_id, organization_id, table_name, action, record_id, metadata")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (filter) q = q.eq(filter.column, filter.value);
+    const { data, error } = await q;
+    if (error) throw new Error(`audit_events: ${error.message}`);
+    return (data ?? []) as unknown as AuditRowRaw[];
+  }
+
+  /** Platform-wide audit trail, newest first, with actor email and org name resolved. */
+  async getAuditLog(limit = 150): Promise<AuditEvent[]> {
+    type Profile = { id: string; email: string };
+    type Org = { id: string; name: string };
+    const [events, profiles, orgs] = await Promise.all([
+      this.auditRows(undefined, limit),
+      this.rows<Profile>("profiles", "id, email"),
+      this.rows<Org>("organizations", "id, name"),
+    ]);
+    const email = new Map(profiles.map((p) => [p.id, p.email]));
+    const orgName = new Map(orgs.map((o) => [o.id, o.name]));
+    return events.map((e) => toAuditEvent(e, email, orgName));
+  }
+
+  async getUser(id: string): Promise<PlatformUserDetail | null> {
+    type Profile = {
+      id: string;
+      email: string;
+      full_name: string | null;
+      avatar_url: string | null;
+      created_at: string;
+    };
+    type Membership = { user_id: string; organization_id: string; role: string; created_at: string };
+    type Org = { id: string; name: string; plan: string };
+
+    const { data: profile, error } = await this.db
+      .from("profiles")
+      .select("id, email, full_name, avatar_url, created_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(`profiles: ${error.message}`);
+    if (!profile) return null;
+    const p = profile as unknown as Profile;
+
+    const [memberships, orgs, events] = await Promise.all([
+      this.rows<Membership>("memberships", "user_id, organization_id, role, created_at"),
+      this.rows<Org>("organizations", "id, name, plan"),
+      this.auditRows({ column: "actor_id", value: id }, 50),
+    ]);
+
+    const orgById = new Map(orgs.map((o) => [o.id, o]));
+    // Every event here was authored by this user, so the actor email is known.
+    const email = new Map([[id, p.email]]);
+    const orgName = new Map(orgs.map((o) => [o.id, o.name]));
+
+    return {
+      id: p.id,
+      email: p.email,
+      fullName: p.full_name,
+      avatarUrl: p.avatar_url,
+      createdAt: p.created_at,
+      orgs: memberships
+        .filter((m) => m.user_id === id)
+        .map((m) => ({
+          id: m.organization_id,
+          name: orgById.get(m.organization_id)?.name ?? "—",
+          plan: orgById.get(m.organization_id)?.plan ?? "—",
+          role: m.role,
+          joinedAt: m.created_at,
+        })),
+      recentEvents: events.map((e) => toAuditEvent(e, email, orgName)),
+    };
+  }
+
+  async getOrganization(id: string): Promise<PlatformOrgDetail | null> {
+    type Org = { id: string; name: string; plan: string; created_at: string };
+    type Membership = { user_id: string; organization_id: string; role: string; created_at: string };
+    type Profile = { id: string; email: string; full_name: string | null };
+    type Aws = { organization_id: string; account_id: string | null; status: string; created_at: string };
+    type Scan = { organization_id: string };
+    type Finding = { organization_id: string; status: string; estimated_monthly_savings: number | null };
+
+    const { data: organization, error } = await this.db
+      .from("organizations")
+      .select("id, name, plan, created_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(`organizations: ${error.message}`);
+    if (!organization) return null;
+    const o = organization as unknown as Org;
+
+    const [allMembers, profiles, allAws, allScans, allFindings, events, allOrgs] = await Promise.all([
+      this.rows<Membership>("memberships", "user_id, organization_id, role, created_at"),
+      this.rows<Profile>("profiles", "id, email, full_name"),
+      this.rows<Aws>("aws_accounts", "organization_id, account_id, status, created_at"),
+      this.rows<Scan>("scans", "organization_id"),
+      this.rows<Finding>("findings", "organization_id, status, estimated_monthly_savings"),
+      this.auditRows({ column: "organization_id", value: id }, 50),
+      this.rows<{ id: string; name: string }>("organizations", "id, name"),
+    ]);
+
+    const members = allMembers.filter((m) => m.organization_id === id);
+    const aws = allAws.filter((a) => a.organization_id === id);
+    const scans = allScans.filter((s) => s.organization_id === id);
+    const findings = allFindings.filter((f) => f.organization_id === id);
+
+    const profileById = new Map(profiles.map((p) => [p.id, p]));
+    const email = new Map(profiles.map((x) => [x.id, x.email]));
+    const orgName = new Map(allOrgs.map((x) => [x.id, x.name]));
+    const open = findings.filter((f) => f.status === "open");
+
+    return {
+      id: o.id,
+      name: o.name,
+      plan: o.plan,
+      createdAt: o.created_at,
+      members: members.map((m) => ({
+        id: m.user_id,
+        email: profileById.get(m.user_id)?.email ?? "—",
+        fullName: profileById.get(m.user_id)?.full_name ?? null,
+        role: m.role,
+        joinedAt: m.created_at,
+      })),
+      awsAccounts: aws.map((a) => ({
+        accountId: a.account_id,
+        status: a.status,
+        createdAt: a.created_at,
+      })),
+      scans: scans.length,
+      findingsOpen: open.length,
+      estimatedMonthlySavings: open.reduce((sum, f) => sum + num(f.estimated_monthly_savings), 0),
+      recentEvents: events.map((e) => toAuditEvent(e, email, orgName)),
+    };
+  }
+}
+
+interface AuditRowRaw {
+  id: number;
+  created_at: string;
+  actor_id: string | null;
+  organization_id: string | null;
+  table_name: string;
+  action: string;
+  record_id: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+function toAuditEvent(
+  e: AuditRowRaw,
+  email: Map<string, string>,
+  orgName: Map<string, string>,
+): AuditEvent {
+  return {
+    id: e.id,
+    at: e.created_at,
+    action: e.action,
+    tableName: e.table_name,
+    recordId: e.record_id,
+    actorId: e.actor_id,
+    actorEmail: e.actor_id ? (email.get(e.actor_id) ?? null) : null,
+    organizationId: e.organization_id,
+    organizationName: e.organization_id ? (orgName.get(e.organization_id) ?? null) : null,
+    metadata: e.metadata ?? {},
+  };
 }

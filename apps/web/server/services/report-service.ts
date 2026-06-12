@@ -9,6 +9,7 @@ import {
   type Db,
 } from "@cloudleak/db";
 import { ForbiddenError, ValidationError } from "@cloudleak/core";
+import { sendEmail } from "../email.js";
 
 function usd(n: number): string {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -112,34 +113,49 @@ function digestHtml(opts: {
 </html>`;
 }
 
-async function sendViaResend(opts: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "CloudLeak <digest@cloudleak.io>";
+/**
+ * Build an org's weekly-digest email from whatever Db client is passed (a user
+ * client for the manual "send me a digest" flow, or the service client for the
+ * automated cron). Returns null when the org has no connected AWS account, so
+ * the caller can skip orgs with nothing to report.
+ */
+export async function buildOrgDigest(
+  db: Db,
+  organizationId: string,
+): Promise<{ subject: string; html: string; savings: number } | null> {
+  const org = await new OrganizationRepository(db).getById(organizationId);
 
-  if (!apiKey) {
-    // Log instead of crashing in dev so the UI flow is testable without Resend configured
-    console.log("[report-service] RESEND_API_KEY not set — skipping send. Would email:", opts.to);
-    console.log("[report-service] Subject:", opts.subject);
-    return;
+  const [findings, resources, scans, accounts] = await Promise.all([
+    new FindingRepository(db).listByOrg(organizationId),
+    new ResourceRepository(db).listByOrg(organizationId),
+    new ScanRepository(db).listByOrg(organizationId),
+    new AwsAccountRepository(db).listForOrg(organizationId),
+  ]);
+
+  if (accounts.filter((a) => a.status === "connected").length === 0) return null;
+
+  const open = findings.filter((f) => f.status === "open");
+  const savings = open.reduce((a, f) => a + (f.estimatedMonthlySavings ?? 0), 0);
+
+  const findingsByType: Record<string, number> = {};
+  for (const f of open) {
+    findingsByType[f.findingType] = (findingsByType[f.findingType] ?? 0) + 1;
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ from, to: opts.to, subject: opts.subject, html: opts.html }),
+  const html = digestHtml({
+    orgName: org.name,
+    savings,
+    openFindings: open.length,
+    resourceCount: resources.length,
+    findingsByType,
+    lastScanAt: scans[0]?.createdAt ?? null,
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Resend error ${res.status}: ${body}`);
-  }
+  return {
+    subject: `CloudLeak Weekly Digest — ${usd(savings)} in savings identified`,
+    html,
+    savings,
+  };
 }
 
 export class ReportService {
@@ -157,40 +173,9 @@ export class ReportService {
       throw new ForbiddenError("Only owners/admins can send digest");
     }
 
-    const org = await new OrganizationRepository(db).getById(organizationId);
+    const digest = await buildOrgDigest(db, organizationId);
+    if (!digest) throw new ValidationError("No connected AWS accounts — nothing to report");
 
-    const [findings, resources, scans, accounts] = await Promise.all([
-      new FindingRepository(db).listByOrg(organizationId),
-      new ResourceRepository(db).listByOrg(organizationId),
-      new ScanRepository(db).listByOrg(organizationId),
-      new AwsAccountRepository(db).listForOrg(organizationId),
-    ]);
-
-    if (accounts.filter((a) => a.status === "connected").length === 0) {
-      throw new ValidationError("No connected AWS accounts — nothing to report");
-    }
-
-    const open = findings.filter((f) => f.status === "open");
-    const savings = open.reduce((a, f) => a + (f.estimatedMonthlySavings ?? 0), 0);
-
-    const findingsByType: Record<string, number> = {};
-    for (const f of open) {
-      findingsByType[f.findingType] = (findingsByType[f.findingType] ?? 0) + 1;
-    }
-
-    const html = digestHtml({
-      orgName: org.name,
-      savings,
-      openFindings: open.length,
-      resourceCount: resources.length,
-      findingsByType,
-      lastScanAt: scans[0]?.createdAt ?? null,
-    });
-
-    await sendViaResend({
-      to: userEmail,
-      subject: `CloudLeak Weekly Digest — ${usd(savings)} in savings identified`,
-      html,
-    });
+    await sendEmail({ to: userEmail, subject: digest.subject, html: digest.html });
   }
 }

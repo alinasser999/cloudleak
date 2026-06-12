@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: number
+          metadata: Json
+          organization_id: string | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json
+          organization_id?: string | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json
+          organization_id?: string | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       aws_accounts: {
         Row: {
           account_id: string | null

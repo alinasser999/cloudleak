@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Panel, Eyebrow, PageHeading } from "@/components/ui";
-import { IconUsers, IconCloud, IconScan, IconAlert } from "@/components/icons";
+import { IconUsers, IconCloud, IconScan, IconAlert, IconArrowUpRight } from "@/components/icons";
 import { timeAgo, fmtDate, usd, PlanChip, GodModeBadge, ErrorPanel } from "../admin-shared";
 
 interface PlatformOrg {
@@ -36,8 +37,11 @@ function OrgRow({ org, index }: { org: PlatformOrg; index: number }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.3) }}
-      className="flex items-center gap-3.5 px-4 py-3.5"
     >
+      <Link
+        href={`/admin/organizations/${org.id}`}
+        className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-line/[0.03]"
+      >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-medium text-ink">{org.name}</p>
@@ -57,6 +61,8 @@ function OrgRow({ org, index }: { org: PlatformOrg; index: number }) {
         {usd.format(org.estimatedMonthlySavings)}
         <span className="block text-[10px] font-sans text-ink-faint">/mo saved</span>
       </span>
+      <IconArrowUpRight className="h-4 w-4 shrink-0 text-ink-faint transition-colors group-hover:text-ink" />
+      </Link>
     </motion.li>
   );
 }

@@ -1,6 +1,21 @@
 import { randomBytes } from "node:crypto";
-import { createUserClient, MembershipRepository, InvitationRepository } from "@cloudleak/db";
-import { ForbiddenError, ValidationError, type Invitation, type Role } from "@cloudleak/core";
+import {
+  createUserClient,
+  MembershipRepository,
+  InvitationRepository,
+  OrganizationRepository,
+} from "@cloudleak/db";
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+  PlanLimitError,
+  planLimits,
+  PLAN_LABEL,
+  type Invitation,
+  type Role,
+} from "@cloudleak/core";
+import { sendEmail, inviteEmailHtml, appUrl } from "../email.js";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -11,6 +26,7 @@ export class InviteService {
     organizationId: string,
     email: string,
     role: Role,
+    inviterEmail: string | null = null,
   ): Promise<Invitation> {
     const db = createUserClient(accessToken);
     const actor = await new MembershipRepository(db).findForUserInOrg(actorUserId, organizationId);
@@ -18,15 +34,86 @@ export class InviteService {
       throw new ForbiddenError("Only owners/admins can invite");
     }
     if (!email.includes("@")) throw new ValidationError("Invalid email");
+
+    // Enforce the plan's seat quota: active members + pending invitations.
+    const invitationRepo = new InvitationRepository(db);
+    const [org, members, pending] = await Promise.all([
+      new OrganizationRepository(db).getById(organizationId),
+      new MembershipRepository(db).listForOrg(organizationId),
+      invitationRepo.listPendingForOrg(organizationId),
+    ]);
+    const limit = planLimits(org.plan).maxSeats;
+    if (members.length + pending.length >= limit) {
+      throw new PlanLimitError(
+        `Your ${PLAN_LABEL[org.plan]} plan includes ${limit} seats (members + pending invites). Upgrade to add more.`,
+      );
+    }
+
     const token = randomBytes(24).toString("base64url");
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 864e5).toISOString();
-    return new InvitationRepository(db).create({
+    const invite = await invitationRepo.create({
       organizationId,
       email,
       role,
       token,
       expiresAt,
       invitedBy: actorUserId,
+    });
+
+    // Deliver the invite email. Best-effort: the invitation already exists and the
+    // link is shareable from the UI, so a transport failure must not fail the call.
+    try {
+      await sendEmail({
+        to: email,
+        subject: `You're invited to ${org.name} on CloudLeak`,
+        html: inviteEmailHtml({
+          orgName: org.name,
+          inviterEmail,
+          role,
+          acceptUrl: appUrl(`/invite/${token}`),
+          expiresAt,
+        }),
+      });
+    } catch (e) {
+      console.error("[invite-service] invite email failed (invite still created):", e);
+    }
+
+    return invite;
+  }
+
+  /** Re-send the email for an existing pending invite (owners/admins only). */
+  static async resend(
+    accessToken: string,
+    actorUserId: string,
+    inviteId: string,
+    inviterEmail: string | null = null,
+  ): Promise<{ sent: boolean }> {
+    const db = createUserClient(accessToken);
+    const invite = await new InvitationRepository(db).getById(inviteId);
+    if (!invite) throw new NotFoundError("Invite not found");
+
+    const actor = await new MembershipRepository(db).findForUserInOrg(
+      actorUserId,
+      invite.organizationId,
+    );
+    if (!actor || (actor.role !== "owner" && actor.role !== "admin")) {
+      throw new ForbiddenError("Only owners/admins can resend invites");
+    }
+    if (invite.status !== "pending" || new Date(invite.expiresAt) <= new Date()) {
+      throw new ValidationError("This invite is no longer pending");
+    }
+
+    const org = await new OrganizationRepository(db).getById(invite.organizationId);
+    return sendEmail({
+      to: invite.email,
+      subject: `You're invited to ${org.name} on CloudLeak`,
+      html: inviteEmailHtml({
+        orgName: org.name,
+        inviterEmail,
+        role: invite.role,
+        acceptUrl: appUrl(`/invite/${invite.token}`),
+        expiresAt: invite.expiresAt,
+      }),
     });
   }
 

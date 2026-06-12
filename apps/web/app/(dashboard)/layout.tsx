@@ -46,6 +46,7 @@ const PLATFORM_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: IconSparkles, exact: true },
   { href: "/admin/users", label: "All Users", icon: IconUsers },
   { href: "/admin/organizations", label: "Organizations", icon: IconServer },
+  { href: "/admin/audit", label: "Audit Log", icon: IconClock },
 ];
 
 function NavLink({ href, label, icon: Icon, active }: NavItem & { active: boolean }) {

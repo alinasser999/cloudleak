@@ -2,12 +2,15 @@ import {
   createUserClient,
   MembershipRepository,
   InvitationRepository,
+  OrganizationRepository,
   type Db,
 } from "@cloudleak/db";
 import {
   ForbiddenError,
   NotFoundError,
   ValidationError,
+  planLimits,
+  type Plan,
   type OrgMember,
   type Role,
 } from "@cloudleak/core";
@@ -38,6 +41,8 @@ export interface PendingInvite {
 export interface TeamView {
   members: OrgMember[];
   pendingInvites: PendingInvite[];
+  /** Seat usage for the org's plan, so the UI can show "used / total" + gate invites. */
+  seats: { used: number; limit: number; plan: Plan };
 }
 
 /** An organization's team: roster + pending invites, plus role/membership management. */
@@ -61,9 +66,10 @@ export class MemberService {
     await this.assertAdmin(userId, organizationId);
 
     const db = this.db();
-    const [members, invites] = await Promise.all([
+    const [members, invites, org] = await Promise.all([
       new MembershipRepository(db).listForOrg(organizationId),
       new InvitationRepository(db).listPendingForOrg(organizationId),
+      new OrganizationRepository(db).getById(organizationId),
     ]);
 
     return {
@@ -75,6 +81,11 @@ export class MemberService {
         expiresAt: i.expiresAt,
         token: i.token,
       })),
+      seats: {
+        used: members.length + invites.length,
+        limit: planLimits(org.plan).maxSeats,
+        plan: org.plan,
+      },
     };
   }
 

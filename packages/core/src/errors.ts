@@ -39,3 +39,10 @@ export class PlanLimitError extends DomainError {
     super(message, "plan_limit", 402);
   }
 }
+
+/** Raised when a caller exceeds an endpoint's request budget (HTTP 429). */
+export class RateLimitError extends DomainError {
+  constructor(message = "Too many requests — slow down and try again shortly") {
+    super(message, "rate_limited", 429);
+  }
+}

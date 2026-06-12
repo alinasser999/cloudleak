@@ -9,6 +9,7 @@ import {
   type Db,
 } from "@cloudleak/db";
 import { ForbiddenError, ValidationError } from "@cloudleak/core";
+import { sendEmail } from "../email.js";
 
 function usd(n: number): string {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
@@ -112,36 +113,6 @@ function digestHtml(opts: {
 </html>`;
 }
 
-async function sendViaResend(opts: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "CloudLeak <digest@cloudleak.io>";
-
-  if (!apiKey) {
-    // Log instead of crashing in dev so the UI flow is testable without Resend configured
-    console.log("[report-service] RESEND_API_KEY not set — skipping send. Would email:", opts.to);
-    console.log("[report-service] Subject:", opts.subject);
-    return;
-  }
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ from, to: opts.to, subject: opts.subject, html: opts.html }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Resend error ${res.status}: ${body}`);
-  }
-}
-
 export class ReportService {
   constructor(private readonly accessToken: string) {}
 
@@ -187,7 +158,7 @@ export class ReportService {
       lastScanAt: scans[0]?.createdAt ?? null,
     });
 
-    await sendViaResend({
+    await sendEmail({
       to: userEmail,
       subject: `CloudLeak Weekly Digest — ${usd(savings)} in savings identified`,
       html,

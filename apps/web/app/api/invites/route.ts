@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       parsed.data.organizationId,
       parsed.data.email,
       parsed.data.role,
+      user.email ?? null,
     );
     return NextResponse.json(
       { invite: { id: invite.id, email: invite.email, token: invite.token } },

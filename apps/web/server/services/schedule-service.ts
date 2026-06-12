@@ -2,12 +2,19 @@ import {
   createUserClient,
   AwsAccountRepository,
   MembershipRepository,
+  OrganizationRepository,
   ScheduleRepository,
   type ScanSchedule,
   type ScheduleFrequency,
   type Db,
 } from "@cloudleak/db";
-import { ForbiddenError, ValidationError } from "@cloudleak/core";
+import {
+  ForbiddenError,
+  ValidationError,
+  PlanLimitError,
+  planLimits,
+  PLAN_LABEL,
+} from "@cloudleak/core";
 
 export interface ScheduleWithAccount extends ScanSchedule {
   awsAccountIdentifier: string | null;
@@ -69,6 +76,15 @@ export class ScheduleService {
 
     const valid: ScheduleFrequency[] = ["off", "daily", "weekly"];
     if (!valid.includes(frequency)) throw new ValidationError("Invalid frequency");
+
+    // Gate cadences the plan doesn't include (e.g. daily scans on Starter).
+    const org = await new OrganizationRepository(this.db()).getById(organizationId);
+    const allowed = planLimits(org.plan).allowedScanFrequencies;
+    if (!allowed.includes(frequency)) {
+      throw new PlanLimitError(
+        `${frequency[0]!.toUpperCase()}${frequency.slice(1)} scans aren't available on the ${PLAN_LABEL[org.plan]} plan. Upgrade to enable them.`,
+      );
+    }
 
     const acct = await new AwsAccountRepository(this.db()).getById(awsAccountId, organizationId);
     if (acct.status !== "connected") throw new ValidationError("Account not connected");

@@ -1,8 +1,17 @@
-import { createUserClient, AwsAccountRepository, MembershipRepository, type Db } from "@cloudleak/db";
+import {
+  createUserClient,
+  AwsAccountRepository,
+  MembershipRepository,
+  OrganizationRepository,
+  type Db,
+} from "@cloudleak/db";
 import {
   generateExternalId,
   renderRoleTerraform,
+  planLimits,
+  PLAN_LABEL,
   ForbiddenError,
+  PlanLimitError,
   type AwsAccount,
 } from "@cloudleak/core";
 import { RealStsService, type StsService } from "@cloudleak/aws";
@@ -36,8 +45,23 @@ export class AwsConnectService {
     cloudleakAccountId: string;
   }> {
     await this.assertAdmin(userId, organizationId);
+
+    // Enforce the plan's connected-account quota before starting a new connection.
+    const db = this.db();
+    const [org, accounts] = await Promise.all([
+      new OrganizationRepository(db).getById(organizationId),
+      new AwsAccountRepository(db).listForOrg(organizationId),
+    ]);
+    const limit = planLimits(org.plan).maxAwsAccounts;
+    const connected = accounts.filter((a) => a.status === "connected").length;
+    if (connected >= limit) {
+      throw new PlanLimitError(
+        `Your ${PLAN_LABEL[org.plan]} plan allows ${limit} connected AWS account${limit === 1 ? "" : "s"}. Upgrade to connect more.`,
+      );
+    }
+
     const externalId = generateExternalId();
-    const account = await new AwsAccountRepository(this.db()).createPending(organizationId, externalId);
+    const account = await new AwsAccountRepository(db).createPending(organizationId, externalId);
     const cloudleakAccountId = process.env.CLOUDLEAK_AWS_ACCOUNT_ID!;
     const terraform = renderRoleTerraform({ externalId, cloudleakAccountId, roleName: ROLE_NAME });
     return { account, terraform, roleName: ROLE_NAME, cloudleakAccountId };

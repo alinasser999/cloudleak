@@ -32,3 +32,10 @@ export class AwsValidationError extends DomainError {
     super(message, "aws_validation_error", 422);
   }
 }
+
+/** Raised when an action would exceed the organization's plan quota (HTTP 402). */
+export class PlanLimitError extends DomainError {
+  constructor(message: string) {
+    super(message, "plan_limit", 402);
+  }
+}

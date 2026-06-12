@@ -36,9 +36,24 @@ interface PendingInvite {
   token: string;
 }
 
+type PlanId = "starter" | "growth" | "agency";
+
+interface Seats {
+  used: number;
+  limit: number;
+  plan: PlanId;
+}
+
+const PLAN_LABEL: Record<PlanId, string> = {
+  starter: "Starter",
+  growth: "Growth",
+  agency: "Agency",
+};
+
 interface TeamView {
   members: Member[];
   pendingInvites: PendingInvite[];
+  seats: Seats;
 }
 
 const ROLE_META: Record<Role, { label: string; chip: string; icon: typeof IconShield }> = {
@@ -383,12 +398,15 @@ function SkeletonRow({ index }: { index: number }) {
 
 function InviteForm({
   organizationId,
+  seats,
   onInvited,
 }: {
   organizationId: string;
+  seats: Seats | null;
   onInvited: () => void;
 }) {
   const toast = useToast();
+  const full = seats !== null && seats.used >= seats.limit;
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
   const [submitting, setSubmitting] = useState(false);
@@ -468,7 +486,7 @@ function InviteForm({
             </select>
             <button
               type="submit"
-              disabled={submitting || !emailValid}
+              disabled={submitting || !emailValid || full}
               className={btnPrimary + " whitespace-nowrap"}
             >
               {submitting ? "Sending…" : "Invite"}
@@ -476,6 +494,16 @@ function InviteForm({
             </button>
           </div>
         </div>
+
+        {full && (
+          <p className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-3.5 py-2.5 text-xs text-amber-700">
+            You&rsquo;ve used all {seats!.limit} seats on your {PLAN_LABEL[seats!.plan]} plan.{" "}
+            <a href="/settings/billing" className="font-semibold underline">
+              Upgrade
+            </a>{" "}
+            to invite more teammates.
+          </p>
+        )}
 
         <AnimatePresence>
           {inviteLink && (
@@ -626,8 +654,6 @@ export function MembersClient({
     void loadTeam();
   }, [loadTeam]);
 
-  const memberCount = team?.members.length ?? 0;
-
   return (
     <div className="max-w-2xl space-y-7">
       <motion.div
@@ -639,9 +665,9 @@ export function MembersClient({
           title="Team"
           actions={
             <div className="rounded-xl border border-line/10 bg-surface/60 px-3 py-2 text-right">
-              <Eyebrow>Members</Eyebrow>
+              <Eyebrow>Seats</Eyebrow>
               <p className="mt-0.5 font-display text-lg leading-none tabular-nums text-ink">
-                {team === null ? "—" : memberCount}
+                {team === null ? "—" : `${team.seats.used}/${team.seats.limit}`}
               </p>
             </div>
           }
@@ -657,7 +683,11 @@ export function MembersClient({
         className="space-y-2.5"
       >
         <Eyebrow className="px-1">Invite a teammate</Eyebrow>
-        <InviteForm organizationId={organizationId} onInvited={loadTeam} />
+        <InviteForm
+          organizationId={organizationId}
+          seats={team?.seats ?? null}
+          onInvited={loadTeam}
+        />
       </motion.div>
 
       {error ? (

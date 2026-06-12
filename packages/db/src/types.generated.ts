@@ -505,6 +505,7 @@ export type Database = {
         }
       }
       remove_member: { Args: { p_membership_id: string }; Returns: undefined }
+      revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
       update_member_role: {
         Args: { p_membership_id: string; p_role: string }
         Returns: undefined

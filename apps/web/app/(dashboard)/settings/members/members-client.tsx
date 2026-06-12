@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_OUT } from "../../../../components/motion";
+import { useToast } from "../../../../components/toast";
 import { Panel, Eyebrow, PageHeading, btnPrimary } from "../../../../components/ui";
 import {
   IconUsers,
@@ -32,6 +33,7 @@ interface PendingInvite {
   email: string;
   role: Role;
   expiresAt: string;
+  token: string;
 }
 
 interface TeamView {
@@ -82,6 +84,7 @@ const rowVariants = {
     y: 0,
     transition: { duration: 0.25, delay: i * 0.05, ease: EASE_OUT },
   }),
+  exit: { opacity: 0, x: -8, transition: { duration: 0.18, ease: EASE_OUT } },
 };
 
 function initials(name: string | null, email: string): string {
@@ -224,10 +227,12 @@ function MemberRow({
 }) {
   return (
     <motion.li
+      layout
       custom={index}
       variants={rowVariants}
       initial="hidden"
       animate="visible"
+      exit="exit"
       className="flex items-center gap-3.5 px-4 py-3.5"
     >
       <Avatar member={member} />
@@ -260,27 +265,99 @@ function MemberRow({
   );
 }
 
-function InviteRow({ invite, index }: { invite: PendingInvite; index: number }) {
+function InviteRow({
+  invite,
+  index,
+  pending,
+  confirming,
+  onRevokeClick,
+  onRevokeConfirm,
+  onRevokeCancel,
+}: {
+  invite: PendingInvite;
+  index: number;
+  pending: boolean;
+  confirming: boolean;
+  onRevokeClick: () => void;
+  onRevokeConfirm: () => void;
+  onRevokeCancel: () => void;
+}) {
+  const toast = useToast();
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/invite/${invite.token}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn’t copy the link");
+    }
+  }
+
   return (
     <motion.li
+      layout
       custom={index}
       variants={rowVariants}
       initial="hidden"
       animate="visible"
-      className="flex items-center gap-3.5 px-4 py-3.5"
+      exit="exit"
+      className="flex items-center gap-3 px-4 py-3.5"
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-dashed border-line/20 bg-line/[0.03] text-ink-faint">
-        <IconUsers className="h-4 w-4" />
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-dashed border-line/20 bg-line/[0.03] text-amber-500">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-mono text-sm text-ink">{invite.email}</p>
         <p className="text-[11px] text-ink-muted">{expiresIn(invite.expiresAt)}</p>
       </div>
       <RoleChip role={invite.role} />
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-amber-700 ring-1 ring-inset ring-amber-500/25">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-        Pending
-      </span>
+      {confirming ? (
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-ink-muted">Revoke?</span>
+          <button
+            type="button"
+            onClick={onRevokeConfirm}
+            disabled={pending}
+            className="rounded-full bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-600 ring-1 ring-inset ring-rose-500/25 transition hover:bg-rose-500/15 disabled:opacity-50"
+          >
+            {pending ? "Revoking…" : "Confirm"}
+          </button>
+          <button
+            type="button"
+            onClick={onRevokeCancel}
+            disabled={pending}
+            className="rounded-full px-2 py-1 text-[11px] font-medium text-ink-muted transition hover:text-ink disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={copyLink}
+            aria-label={`Copy invite link for ${invite.email}`}
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition hover:bg-line/8 hover:text-ink"
+          >
+            {copied ? (
+              <IconCheck className="h-3.5 w-3.5 text-brand-deep" />
+            ) : (
+              <IconCopy className="h-3.5 w-3.5" />
+            )}
+            {copied ? "Copied" : "Copy link"}
+          </button>
+          <button
+            type="button"
+            onClick={onRevokeClick}
+            aria-label={`Revoke invite for ${invite.email}`}
+            className="grid h-7 w-7 place-items-center rounded-full text-ink-muted/70 transition hover:bg-rose-500/10 hover:text-rose-600"
+          >
+            <IconX className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </motion.li>
   );
 }
@@ -311,23 +388,23 @@ function InviteForm({
   organizationId: string;
   onInvited: () => void;
 }) {
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError(null);
     setInviteLink(null);
     setSubmitting(true);
+    const invitee = email.trim();
     try {
       const r = await fetch("/api/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId, email: email.trim(), role }),
+        body: JSON.stringify({ organizationId, email: invitee, role }),
       });
       const d = (await r.json().catch(() => null)) as
         | { invite?: { token?: string }; error?: { message?: string } }
@@ -336,9 +413,10 @@ function InviteForm({
       const token = d?.invite?.token;
       if (token) setInviteLink(`${window.location.origin}/invite/${token}`);
       setEmail("");
+      toast.success(`Invite ready for ${invitee}`);
       onInvited();
     } catch (err) {
-      setFormError((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setSubmitting(false);
     }
@@ -399,8 +477,6 @@ function InviteForm({
           </div>
         </div>
 
-        {formError && <p className="text-sm font-medium text-rose-600">{formError}</p>}
-
         <AnimatePresence>
           {inviteLink && (
             <motion.div
@@ -452,14 +528,16 @@ export function MembersClient({
   currentUserId: string;
   currentUserRole: Role;
 }) {
+  const toast = useToast();
   const [team, setTeam] = useState<TeamView | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
+  const nameOf = (m: Member) => m.fullName ?? m.email;
+
   async function changeRole(membershipId: string, role: Role) {
-    setActionError(null);
+    const member = team?.members.find((m) => m.membershipId === membershipId);
     setPendingId(membershipId);
     try {
       const r = await fetch(`/api/members/${membershipId}`, {
@@ -481,15 +559,16 @@ export function MembersClient({
             }
           : t,
       );
+      toast.success(`${member ? nameOf(member) : "Member"} is now ${ROLE_META[role].label}`);
     } catch (e) {
-      setActionError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setPendingId(null);
     }
   }
 
   async function removeMember(membershipId: string) {
-    setActionError(null);
+    const member = team?.members.find((m) => m.membershipId === membershipId);
     setPendingId(membershipId);
     try {
       const r = await fetch(`/api/members/${membershipId}`, { method: "DELETE" });
@@ -501,8 +580,30 @@ export function MembersClient({
         t ? { ...t, members: t.members.filter((m) => m.membershipId !== membershipId) } : t,
       );
       setConfirmingId(null);
+      toast.success(`Removed ${member ? nameOf(member) : "member"}`);
     } catch (e) {
-      setActionError((e as Error).message);
+      toast.error((e as Error).message);
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function revokeInvite(inviteId: string) {
+    const invite = team?.pendingInvites.find((i) => i.id === inviteId);
+    setPendingId(inviteId);
+    try {
+      const r = await fetch(`/api/invites/${inviteId}`, { method: "DELETE" });
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: { message?: string } } | null;
+        throw new Error(d?.error?.message ?? "Could not revoke invite");
+      }
+      setTeam((t) =>
+        t ? { ...t, pendingInvites: t.pendingInvites.filter((i) => i.id !== inviteId) } : t,
+      );
+      setConfirmingId(null);
+      toast.success(`Revoked invite for ${invite?.email ?? "teammate"}`);
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setPendingId(null);
     }
@@ -574,42 +675,27 @@ export function MembersClient({
         </Panel>
       ) : (
         <>
-          <AnimatePresence>
-            {actionError && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-4 py-2.5 text-xs font-medium text-rose-600"
-              >
-                {actionError}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <section className="space-y-2.5">
             <Eyebrow className="px-1">Active members</Eyebrow>
             <Panel className="overflow-hidden">
               <ul className="divide-y divide-line/8">
-                {team.members.map((m, i) => (
-                  <MemberRow
-                    key={m.membershipId}
-                    member={m}
-                    index={i}
-                    isYou={m.userId === currentUserId}
-                    actorRole={currentUserRole}
-                    pending={pendingId === m.membershipId}
-                    confirming={confirmingId === m.membershipId}
-                    onRoleChange={(role) => changeRole(m.membershipId, role)}
-                    onRemoveClick={() => {
-                      setActionError(null);
-                      setConfirmingId(m.membershipId);
-                    }}
-                    onRemoveConfirm={() => removeMember(m.membershipId)}
-                    onRemoveCancel={() => setConfirmingId(null)}
-                  />
-                ))}
+                <AnimatePresence>
+                  {team.members.map((m, i) => (
+                    <MemberRow
+                      key={m.membershipId}
+                      member={m}
+                      index={i}
+                      isYou={m.userId === currentUserId}
+                      actorRole={currentUserRole}
+                      pending={pendingId === m.membershipId}
+                      confirming={confirmingId === m.membershipId}
+                      onRoleChange={(role) => changeRole(m.membershipId, role)}
+                      onRemoveClick={() => setConfirmingId(m.membershipId)}
+                      onRemoveConfirm={() => removeMember(m.membershipId)}
+                      onRemoveCancel={() => setConfirmingId(null)}
+                    />
+                  ))}
+                </AnimatePresence>
               </ul>
             </Panel>
           </section>
@@ -626,9 +712,20 @@ export function MembersClient({
                 <Eyebrow className="px-1">Pending invites</Eyebrow>
                 <Panel className="overflow-hidden">
                   <ul className="divide-y divide-line/8">
-                    {team.pendingInvites.map((inv, i) => (
-                      <InviteRow key={inv.id} invite={inv} index={i} />
-                    ))}
+                    <AnimatePresence>
+                      {team.pendingInvites.map((inv, i) => (
+                        <InviteRow
+                          key={inv.id}
+                          invite={inv}
+                          index={i}
+                          pending={pendingId === inv.id}
+                          confirming={confirmingId === inv.id}
+                          onRevokeClick={() => setConfirmingId(inv.id)}
+                          onRevokeConfirm={() => revokeInvite(inv.id)}
+                          onRevokeCancel={() => setConfirmingId(null)}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </ul>
                 </Panel>
               </motion.section>

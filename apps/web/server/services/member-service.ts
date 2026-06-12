@@ -32,6 +32,7 @@ export interface PendingInvite {
   email: string;
   role: OrgMember["role"];
   expiresAt: string;
+  token: string;
 }
 
 export interface TeamView {
@@ -72,6 +73,7 @@ export class MemberService {
         email: i.email,
         role: i.role,
         expiresAt: i.expiresAt,
+        token: i.token,
       })),
     };
   }
@@ -94,6 +96,12 @@ export class MemberService {
     const { error } = await this.db().rpc("remove_member", {
       p_membership_id: membershipId,
     });
+    if (error) throw mapRpcError(error);
+  }
+
+  /** Revoke a pending invitation. Authority is enforced by the revoke_invite RPC. */
+  async revokeInvite(inviteId: string): Promise<void> {
+    const { error } = await this.db().rpc("revoke_invite", { p_invite_id: inviteId });
     if (error) throw mapRpcError(error);
   }
 }

@@ -5,8 +5,8 @@ import { handleApiError } from "@/server/api-error-handler";
 
 export async function GET() {
   try {
-    await requirePlatformAdmin();
-    return NextResponse.json({ users: await new PlatformService().listUsers() });
+    const { accessToken } = await requirePlatformAdmin();
+    return NextResponse.json({ users: await new PlatformService(accessToken).listUsers() });
   } catch (e) {
     return handleApiError(e);
   }

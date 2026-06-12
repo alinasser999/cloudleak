@@ -18,10 +18,11 @@ export async function isPlatformAdmin(): Promise<boolean> {
   }
 }
 
-/** Asserts platform-admin access for an API route, throwing ForbiddenError otherwise. */
-export async function requirePlatformAdmin(): Promise<void> {
+/** Asserts platform-admin access for an API route, returning the caller's token. */
+export async function requirePlatformAdmin(): Promise<{ accessToken: string }> {
   const { accessToken } = await requireUser();
   const { data, error } = await createUserClient(accessToken).rpc("is_platform_admin");
   if (error) throw new ForbiddenError("Could not verify platform access");
   if (data !== true) throw new ForbiddenError("Platform admin access required");
+  return { accessToken };
 }

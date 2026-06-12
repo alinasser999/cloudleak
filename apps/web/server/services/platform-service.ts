@@ -1,10 +1,11 @@
-import { createServiceClient, type Db, type Database } from "@cloudleak/db";
+import { createUserClient, type Db, type Database } from "@cloudleak/db";
 
 type TableName = keyof Database["public"]["Tables"];
 
 /**
- * Platform-wide ("god view") read model. Every query here runs under the SERVICE
- * ROLE and deliberately bypasses tenant isolation, so callers MUST be gated with
+ * Platform-wide ("god view") read model. Reads run under the platform admin's own
+ * JWT; the cross-tenant visibility comes from the "platform read all ..." RLS
+ * policies (gated on is_platform_admin()), so callers MUST still be gated with
  * requirePlatformAdmin() before constructing this service.
  *
  * Aggregation is done in TypeScript over full-table reads — fine at current scale;
@@ -72,8 +73,8 @@ const num = (v: number | string | null): number => (v == null ? 0 : Number(v) ||
 export class PlatformService {
   private readonly db: Db;
 
-  constructor() {
-    this.db = createServiceClient();
+  constructor(accessToken: string) {
+    this.db = createUserClient(accessToken);
   }
 
   private async rows<T>(

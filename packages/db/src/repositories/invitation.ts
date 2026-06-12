@@ -67,6 +67,11 @@ export class InvitationRepository {
     return (data ?? []).map(map);
   }
 
+  async getById(id: string): Promise<Invitation | null> {
+    const { data } = await this.db.from("invitations").select().eq("id", id).maybeSingle();
+    return data ? map(data) : null;
+  }
+
   async findByToken(token: string): Promise<Invitation | null> {
     const { data } = await this.db
       .from("invitations")

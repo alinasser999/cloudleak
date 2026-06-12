@@ -7,6 +7,7 @@ import {
 } from "@cloudleak/db";
 import {
   ForbiddenError,
+  NotFoundError,
   ValidationError,
   PlanLimitError,
   planLimits,
@@ -78,6 +79,42 @@ export class InviteService {
     }
 
     return invite;
+  }
+
+  /** Re-send the email for an existing pending invite (owners/admins only). */
+  static async resend(
+    accessToken: string,
+    actorUserId: string,
+    inviteId: string,
+    inviterEmail: string | null = null,
+  ): Promise<{ sent: boolean }> {
+    const db = createUserClient(accessToken);
+    const invite = await new InvitationRepository(db).getById(inviteId);
+    if (!invite) throw new NotFoundError("Invite not found");
+
+    const actor = await new MembershipRepository(db).findForUserInOrg(
+      actorUserId,
+      invite.organizationId,
+    );
+    if (!actor || (actor.role !== "owner" && actor.role !== "admin")) {
+      throw new ForbiddenError("Only owners/admins can resend invites");
+    }
+    if (invite.status !== "pending" || new Date(invite.expiresAt) <= new Date()) {
+      throw new ValidationError("This invite is no longer pending");
+    }
+
+    const org = await new OrganizationRepository(db).getById(invite.organizationId);
+    return sendEmail({
+      to: invite.email,
+      subject: `You're invited to ${org.name} on CloudLeak`,
+      html: inviteEmailHtml({
+        orgName: org.name,
+        inviterEmail,
+        role: invite.role,
+        acceptUrl: appUrl(`/invite/${invite.token}`),
+        expiresAt: invite.expiresAt,
+      }),
+    });
   }
 
   /** Accepts via the accept_invite SECURITY DEFINER RPC (caller isn't a member yet). */

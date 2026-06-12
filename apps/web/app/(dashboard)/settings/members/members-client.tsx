@@ -299,6 +299,7 @@ function InviteRow({
 }) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function copyLink() {
     try {
@@ -307,6 +308,24 @@ function InviteRow({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Couldn’t copy the link");
+    }
+  }
+
+  async function resend() {
+    setResending(true);
+    try {
+      const r = await fetch(`/api/invites/${invite.id}/resend`, { method: "POST" });
+      const d = (await r.json().catch(() => null)) as
+        | { sent?: boolean; error?: { message?: string } }
+        | null;
+      if (!r.ok) throw new Error(d?.error?.message ?? "Could not resend invite");
+      toast.success(
+        d?.sent ? `Invite re-sent to ${invite.email}` : `Invite link refreshed for ${invite.email}`,
+      );
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -362,6 +381,15 @@ function InviteRow({
               <IconCopy className="h-3.5 w-3.5" />
             )}
             {copied ? "Copied" : "Copy link"}
+          </button>
+          <button
+            type="button"
+            onClick={resend}
+            disabled={resending}
+            aria-label={`Resend invite to ${invite.email}`}
+            className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition hover:bg-line/8 hover:text-ink disabled:opacity-50"
+          >
+            {resending ? "Sending…" : "Resend"}
           </button>
           <button
             type="button"

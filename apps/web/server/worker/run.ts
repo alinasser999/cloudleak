@@ -8,10 +8,13 @@ import {
   createServiceClient,
   AwsAccountRepository,
   FindingRepository,
+  MembershipRepository,
   ResourceRepository,
   ScanRepository,
   ScheduleRepository,
 } from "@cloudleak/db";
+import { buildOrgDigest } from "../services/report-service.js";
+import { sendEmail } from "../email.js";
 import { runScan } from "@cloudleak/collectors";
 import { runDetection } from "@cloudleak/rules";
 import {
@@ -99,6 +102,37 @@ export async function dispatchDueSchedules(): Promise<number> {
     }
   }
   return dispatched;
+}
+
+/**
+ * Email the weekly digest to every org's owners and admins. Idempotency is
+ * coarse: the cron calls this once on its weekly day, and orgs with no connected
+ * AWS account are skipped. Per-org/per-recipient failures are logged, not fatal.
+ */
+export async function dispatchWeeklyDigests(): Promise<number> {
+  const db = createServiceClient();
+  const { data, error } = await db.from("organizations").select("id");
+  if (error) throw new Error(`organizations: ${error.message}`);
+  const orgs = (data ?? []) as { id: string }[];
+
+  let sent = 0;
+  for (const { id: orgId } of orgs) {
+    try {
+      const digest = await buildOrgDigest(db, orgId);
+      if (!digest) continue;
+      const members = await new MembershipRepository(db).listForOrg(orgId);
+      const recipients = members
+        .filter((m) => m.role === "owner" || m.role === "admin")
+        .map((m) => m.email);
+      for (const to of recipients) {
+        await sendEmail({ to, subject: digest.subject, html: digest.html });
+        sent++;
+      }
+    } catch (e) {
+      console.error(`[cron] weekly digest failed for org ${orgId}:`, e);
+    }
+  }
+  return sent;
 }
 
 export async function processQueuedScans(limit = 3): Promise<number> {

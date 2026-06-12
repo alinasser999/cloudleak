@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { dispatchDueSchedules, processQueuedScans } from "@/server/worker/run";
+import {
+  dispatchDueSchedules,
+  dispatchWeeklyDigests,
+  processQueuedScans,
+} from "@/server/worker/run";
 
 // Extend timeout to 60s — requires Vercel Pro. Hobby plan caps at 10s (fake AWS only).
 export const maxDuration = 60;
@@ -29,8 +33,15 @@ export async function POST(req: Request) {
     processQueuedScans(3),
   ]);
 
-  console.log(`[cron] dispatched=${dispatched} processed=${processed}`);
-  return NextResponse.json({ ok: true, dispatched, processed });
+  // Send weekly digests once a week (Mondays UTC). The cron fires daily; this
+  // keeps the digest cadence weekly without needing per-org send bookkeeping.
+  let digests = 0;
+  if (new Date().getUTCDay() === 1) {
+    digests = await dispatchWeeklyDigests();
+  }
+
+  console.log(`[cron] dispatched=${dispatched} processed=${processed} digests=${digests}`);
+  return NextResponse.json({ ok: true, dispatched, processed, digests });
 }
 
 // Also accept GET so Vercel's cron health check works

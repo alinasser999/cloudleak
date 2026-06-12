@@ -24,6 +24,17 @@ export interface Membership {
   role: Role;
 }
 
+/** A membership joined with its user's profile — the shape a Members page needs. */
+export interface OrgMember {
+  membershipId: string;
+  userId: string;
+  role: Role;
+  email: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  joinedAt: string;
+}
+
 export interface Invitation {
   id: string;
   organizationId: string;

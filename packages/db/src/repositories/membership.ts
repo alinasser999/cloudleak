@@ -1,5 +1,13 @@
 import type { Db } from "../client.js";
-import type { Membership, Role } from "@cloudleak/core";
+import type { Membership, OrgMember, Role } from "@cloudleak/core";
+
+type MemberJoinRow = {
+  id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+  profiles: { email: string; full_name: string | null; avatar_url: string | null } | null;
+};
 
 export class MembershipRepository {
   constructor(private readonly db: Db) {}
@@ -30,6 +38,25 @@ export class MembershipRepository {
       organizationId: d.organization_id,
       userId: d.user_id,
       role: d.role as Role,
+    }));
+  }
+
+  /** Every member of an org, joined to their profile, oldest first (owner usually leads). */
+  async listForOrg(organizationId: string): Promise<OrgMember[]> {
+    const { data, error } = await this.db
+      .from("memberships")
+      .select("id, user_id, role, created_at, profiles(email, full_name, avatar_url)")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as unknown as MemberJoinRow[]).map((d) => ({
+      membershipId: d.id,
+      userId: d.user_id,
+      role: d.role as Role,
+      email: d.profiles?.email ?? "",
+      fullName: d.profiles?.full_name ?? null,
+      avatarUrl: d.profiles?.avatar_url ?? null,
+      joinedAt: d.created_at,
     }));
   }
 
